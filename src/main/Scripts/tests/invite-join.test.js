@@ -4,7 +4,7 @@
 
 const { test, describe } = require('node:test');
 const assert = require('node:assert/strict');
-const { makeUser, makeGroup, makeInvite, join } = require('../lib/factory');
+const { makeUser, makeGroup, makeInvite, join, leave } = require('../lib/factory');
 
 describe('POST /invites/join', () => {
 
@@ -82,7 +82,22 @@ describe('POST /invites/join', () => {
     assert.equal(res.body.errorCode, 'ERR_INVITE_LINK_INACTIVE');
   });
 
-  test('rejoin: a LEFT member can rejoin',
-    { skip: 'no leave/remove endpoint yet to set up the LEFT state via the API' },
-    async () => {});
+  test('rejoin: a LEFT member can rejoin and the row flips back to ACTIVE', async () => {
+    const admin = await makeUser();
+    const group = await makeGroup(admin.token);
+    const invite = await makeInvite(admin.token, group.id, { maxUses: 5 });
+    const member = await makeUser();
+
+    const joined = await join(member.token, invite.token);
+    assert.equal(joined.status, 200);
+
+    const left = await leave(member.token, group.id);
+    assert.equal(left.status, 200);
+
+    const rejoined = await join(member.token, invite.token);
+    assert.equal(rejoined.status, 200);
+    const memberIds = rejoined.body.data.members.map((m) => m.publicId);
+    assert.ok(memberIds.includes(member.publicId), 'rejoined member should be back in members');
+    assert.equal(rejoined.body.data.memberCount, 2);
+  });
 });

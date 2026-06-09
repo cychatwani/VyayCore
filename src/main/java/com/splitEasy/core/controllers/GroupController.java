@@ -12,6 +12,7 @@ import com.splitEasy.core.entity.User;
 import com.splitEasy.core.entity.group.Group;
 import com.splitEasy.core.enums.GroupType;
 import com.splitEasy.core.services.group.GroupInviteService;
+import com.splitEasy.core.services.group.GroupMembershipService;
 import com.splitEasy.core.services.group.GroupService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
@@ -28,10 +29,14 @@ public class GroupController {
 
     private final GroupService groupService;
     private final GroupInviteService groupInviteService;
+    private final GroupMembershipService groupMembershipService;
 
-    public GroupController(GroupService groupService, GroupInviteService groupInviteService) {
+    public GroupController(GroupService groupService,
+                           GroupInviteService groupInviteService,
+                           GroupMembershipService groupMembershipService) {
         this.groupService = groupService;
         this.groupInviteService = groupInviteService;
+        this.groupMembershipService = groupMembershipService;
     }
 
     @PostMapping
@@ -72,5 +77,13 @@ public class GroupController {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(ApiResponse.success(invite, "Invite created"));
+    }
+
+    @PostMapping("/{groupId}/leave")
+    public ResponseEntity<ApiResponse<Void>> leaveGroup(
+            @AuthenticationPrincipal User user,
+            @PathVariable String groupId) {
+        groupMembershipService.leave(user, groupId);
+        return ResponseEntity.ok(ApiResponse.success(null, "You have left the group"));
     }
 }

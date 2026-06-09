@@ -5,7 +5,6 @@ const api = require('./api');
 const RUN = Date.now().toString(36); // run-scoped suffix so re-runs never collide
 let seq = 0;
 
-// Registers + logs in a fresh user. Returns { email, password, token, publicId }.
 async function makeUser() {
   seq += 1;
   const email = `t-${RUN}-${seq}@spliteasy.test`;
@@ -26,11 +25,10 @@ async function makeUser() {
     email,
     password,
     token: session.accessToken,
-    publicId: session.userDetails.id, // SessionIssuer maps publicId -> userDetails.id
+    publicId: session.userDetails.id,
   };
 }
 
-// Creates a group owned by `token`. Returns the group payload (incl. id).
 async function makeGroup(token, overrides = {}) {
   seq += 1;
   const res = await api.post('/groups', {
@@ -45,7 +43,6 @@ async function makeGroup(token, overrides = {}) {
   return res.body.data;
 }
 
-// Creates an invite. opts: { type, maxUses, expiresAt, invitedUsers }. Returns invite payload (incl. token).
 async function makeInvite(token, groupId, opts = {}) {
   const res = await api.post(`/groups/${groupId}/invites`, { type: 'TEMPORARY', ...opts }, token);
   if (res.status !== 201) {
@@ -54,9 +51,13 @@ async function makeInvite(token, groupId, opts = {}) {
   return res.body.data;
 }
 
-// The action under test - returns raw { status, body } so tests can assert on it.
+// Actions under test - return raw { status, body } so tests can assert.
 function join(token, inviteToken) {
   return api.post('/invites/join', { token: inviteToken }, token);
 }
 
-module.exports = { makeUser, makeGroup, makeInvite, join, RUN };
+function leave(token, groupId) {
+  return api.post(`/groups/${groupId}/leave`, undefined, token);
+}
+
+module.exports = { makeUser, makeGroup, makeInvite, join, leave, RUN };

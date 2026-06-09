@@ -11,4 +11,8 @@ public interface GroupRepository extends JpaRepository<Group, String> {
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("UPDATE Group g SET g.memberCount = g.memberCount + 1 WHERE g.id = :id")
     int incrementMemberCount(@Param("id") String id);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("UPDATE Group g SET g.memberCount = g.memberCount - 1 WHERE g.id = :id AND g.memberCount > 0")
+    int decrementMemberCount(@Param("id") String id);
 }
