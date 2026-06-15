@@ -68,3 +68,5 @@
   app:
     auth:
       skip-email-verification: true   # DEV ONLY — code defaults to false, so prod stays safe
+    ledger:
+      hmac-secret: ${LEDGER_HMAC_SECRET:dev-only-change-me-before-anything-real}

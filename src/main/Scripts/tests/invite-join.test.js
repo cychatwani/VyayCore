@@ -10,7 +10,7 @@ describe('POST /invites/join', () => {
 
   test('happy path: open invite lets a new user join', async () => {
     const admin = await makeUser();
-    const group = await makeGroup(admin.token);
+    const group = await makeGroup   (admin.token);
     const invite = await makeInvite(admin.token, group.id, { maxUses: 5 });
     const joiner = await makeUser();
 

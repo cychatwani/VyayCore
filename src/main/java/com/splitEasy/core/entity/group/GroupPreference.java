@@ -16,7 +16,9 @@ public record GroupPreference(
                 new GroupPreference("defaultSplitType", "Default split type",
                         "EQUAL", "STRING", List.of("ADMIN", "MEMBER")),
                 new GroupPreference("autoIncludeAllMembers", "Auto-include all members in new expenses",
-                        true, "BOOLEAN", List.of("ADMIN"))
+                        true, "BOOLEAN", List.of("ADMIN")),
+                new GroupPreference("autoSettle", "Auto-confirm settlements",
+                        false, "BOOLEAN", List.of("ADMIN"))
         );
     }
 }
