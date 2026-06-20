@@ -55,6 +55,17 @@ public interface GroupMembershipRepository extends JpaRepository<GroupMembership
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query(value = """
             UPDATE group_memberships
+            SET deleted_at = now(),
+                status = 'LEFT',
+                left_at = now(),
+                updated_at = now()
+            WHERE group_id = :groupId AND user_id = :userId AND deleted_at IS NULL
+            """, nativeQuery = true)
+    int leaveMembership(@Param("groupId") UUID groupId, @Param("userId") UUID userId);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query(value = """
+            UPDATE group_memberships
             SET deleted_at = NULL,
                 status = 'ACTIVE',
                 left_at = NULL,
@@ -81,9 +92,9 @@ public interface GroupMembershipRepository extends JpaRepository<GroupMembership
 
     List<UUID> findExistingMemberUserIds(@Param("groupId") UUID groupId,
 
-                                       @Param("userIds") Collection<UUID> userIds,
+                                         @Param("userIds") Collection<UUID> userIds,
 
-                                       @Param("status") MembershipStatus status);
+                                         @Param("status") MembershipStatus status);
 
 
 
@@ -146,4 +157,3 @@ public interface GroupMembershipRepository extends JpaRepository<GroupMembership
                                                         @Param("status") MembershipStatus status);
 
 }
-

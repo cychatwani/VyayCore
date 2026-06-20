@@ -114,10 +114,12 @@ public class GroupMembershipService {
             throw new AdminCannotLeaveException();
         }
 
-        me.setStatus(MembershipStatus.LEFT);
-        me.setLeftAt(Instant.now());
-        groupMembershipRepository.save(me);
-        groupMembershipRepository.delete(me);
+        // Single atomic update: stamps deleted_at + status=LEFT + left_at in one statement.
+        // Returns 0 if the row was already left/deleted by a concurrent tx — treat as not-a-member.
+        int updated = groupMembershipRepository.leaveMembership(groupId, principal.getId());
+        if (updated == 0) {
+            throw new NotAMemberException();
+        }
 
         groupRepository.decrementMemberCount(groupId);
     }
