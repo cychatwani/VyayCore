@@ -1,10 +1,13 @@
 package com.splitEasy.core.entity.group;
 
-import com.github.f4b6a3.ulid.Ulid;
 import com.splitEasy.core.entity.User;
+import com.splitEasy.core.entity.base.SoftDeletableEntity;
 import com.splitEasy.core.enums.InviteLinkType;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.time.Instant;
 
@@ -16,16 +19,14 @@ import java.time.Instant;
                 columnNames = {"code"}
         )
 )
+@SQLDelete(sql = "update group_invite_links set deleted_at = now() where id = ?")
+@SQLRestriction("deleted_at is null")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-public class GroupInviteLink {
-
-    @Id
-    @Column(name = "id", updatable = false, nullable = false, length = 26)
-    private String id;  // ULID
+@SuperBuilder
+public class GroupInviteLink extends SoftDeletableEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "group_id", nullable = false)
@@ -52,16 +53,5 @@ public class GroupInviteLink {
 
     @Column(nullable = false)
     @Builder.Default
-    private boolean isActive = true;   // maps to is_active
-
-    @Column(nullable = false, updatable = false)
-    @Builder.Default
-    private Instant createdAt = Instant.now();
-
-    @PrePersist
-    private void prePersist() {
-        if (id == null) {
-            id = Ulid.fast().toString();
-        }
-    }
+    private boolean isActive = true;   // usability flag — distinct concern from soft-delete
 }

@@ -66,7 +66,7 @@ public class PasswordRegistrationService {
             user.setEmailVerified(true);
             userRepository.save(user);
         } else {
-            String verificationToken = jwtService.generateEmailVerificationToken(user.getPublicId());
+            String verificationToken = jwtService.generateEmailVerificationToken(user.getId());
 
             notificationService.send(
                     "EMAIL_VERIFICATION",

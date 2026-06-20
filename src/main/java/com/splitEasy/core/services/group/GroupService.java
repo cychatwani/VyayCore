@@ -28,6 +28,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class GroupService {
@@ -56,7 +57,7 @@ public class GroupService {
             throw new InvalidGroupTypeException();
         }
 
-        Currency currency = currencyRepository.findById(request.getDefaultCurrencyCode())
+        Currency currency = currencyRepository.findByCode(request.getDefaultCurrencyCode())
                 .orElseThrow(() -> new InvalidCurrencyException(request.getDefaultCurrencyCode()));
 
         User creatorRef = userRepository.getReferenceById(principal.getId());
@@ -99,7 +100,7 @@ public class GroupService {
     }
 
     @Transactional(readOnly = true)
-    public GroupDetailDTO getGroupDetail(User principal, String groupId) {
+    public GroupDetailDTO getGroupDetail(User principal, UUID groupId) {
         Group group = groupRepository.findById(groupId)
                 .filter(g -> !g.isDeleted())
                 .orElseThrow(GroupNotFoundException::new);

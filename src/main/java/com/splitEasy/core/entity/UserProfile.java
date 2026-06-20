@@ -8,6 +8,7 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
+import java.util.UUID;
 
 @Entity
 @Table(name = "user_profiles")
@@ -19,7 +20,7 @@ import java.time.Instant;
 public class UserProfile {
 
     @Id
-    private Long id;
+    private UUID id;  // shared PK, derived from User via @MapsId — NOT generated here
 
     @OneToOne(fetch = FetchType.LAZY)
     @MapsId

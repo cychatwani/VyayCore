@@ -1,6 +1,5 @@
 package com.splitEasy.core.dto.requests.expense;
 
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import lombok.AllArgsConstructor;
@@ -9,6 +8,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -16,10 +16,9 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 public class ExpensePayerInputDTO {
 
-    @NotBlank(message = "Payer userPublicId is required")
-    private String userPublicId;
+    @NotNull(message = "Payer userId is required")
+    private UUID userId;
 
-    // Major units (e.g. 123.42). Converted to minor in the service.
     @NotNull(message = "amountPaid is required")
     @Positive(message = "amountPaid must be positive")
     private BigDecimal amountPaid;

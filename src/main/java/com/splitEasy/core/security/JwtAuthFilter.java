@@ -15,6 +15,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
@@ -36,23 +37,17 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         }
 
         String token = header.substring("Bearer ".length()).trim();
-        String userPublicId;
+        UUID userId;
         try {
-            userPublicId = jwtService.getUserPublicIdFromToken(token, "access");
+            userId = jwtService.getUserIdFromToken(token, "access");
         } catch (Exception ex) {
             SecurityContextHolder.clearContext();
             throw new BadCredentialsException("Invalid JWT token");
         }
 
-        if (userPublicId == null || userPublicId.isBlank()) {
-            SecurityContextHolder.clearContext();
-            throw new BadCredentialsException("JWT subject missing");
-        }
-
         if (SecurityContextHolder.getContext().getAuthentication() == null) {
-            User user = userService.getByPublicId(userPublicId)
+            User user = userService.getById(userId)
                     .orElseThrow(() -> new BadCredentialsException("User not found"));
-
 
             UsernamePasswordAuthenticationToken auth =
                     new UsernamePasswordAuthenticationToken(user, null, Collections.emptyList());

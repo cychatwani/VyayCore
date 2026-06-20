@@ -15,6 +15,7 @@ import lombok.Setter;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -26,7 +27,6 @@ public class CreateExpenseRequestDTO {
     @Size(max = 200, message = "Description cannot exceed 200 characters")
     private String description;
 
-    // Major units (e.g. 123.42). Converted to minor in the service using the currency.
     @NotNull(message = "totalAmount is required")
     @Positive(message = "totalAmount must be positive")
     private BigDecimal totalAmount;
@@ -38,13 +38,10 @@ public class CreateExpenseRequestDTO {
     )
     private String currencyCode;
 
-    // Null == personal (unsplit) expense.
-    private String groupId;
+    private UUID groupId;
 
-    // Required for a group expense; ignored for personal. Enforced in the service.
     private SplitType splitType;
 
-    // Null -> the entity defaults it to now() on persist.
     private Instant expenseDate;
 
     @Size(max = 500, message = "Notes cannot exceed 500 characters")

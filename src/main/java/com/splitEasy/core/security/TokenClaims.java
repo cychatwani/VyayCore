@@ -4,6 +4,7 @@ import com.splitEasy.core.enums.InviteLinkType;
 import com.splitEasy.core.enums.TokenType;
 
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Typed, exhaustive taxonomy of every JWT this app issues. One record per token
@@ -34,13 +35,13 @@ public sealed interface TokenClaims {
 
         @Override public TokenType type() { return TokenType.GROUP_INVITE; }
 
-        public String code() { return subject; }   // subject carries the link code
+        public String code() { return subject; }
 
         public boolean isOpen() { return invitedUsers.isEmpty(); }
 
-        /** Empty/absent list = anyone; otherwise the joiner's publicId must be present. */
-        public boolean allows(String userPublicId) {
-            return isOpen() || invitedUsers.contains(userPublicId);
+        /** Empty/absent list = anyone; otherwise the joiner's userId must be present. */
+        public boolean allows(UUID userId) {
+            return isOpen() || invitedUsers.contains(userId.toString());
         }
     }
 }

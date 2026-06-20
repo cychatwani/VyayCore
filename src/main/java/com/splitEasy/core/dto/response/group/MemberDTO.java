@@ -7,24 +7,25 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.time.Instant;
+import java.util.UUID;
 
 @Getter
 @Builder
 public class MemberDTO {
-    private String publicId;
+    private UUID userId;
     private String displayName;
     private String profilePicture;
     private GroupRole role;
-    private Instant joinedAt;
+    private Instant activeSince;
 
     public static MemberDTO from(GroupMembership m) {
         User u = m.getUser();
         return MemberDTO.builder()
-                .publicId(u.getPublicId())
+                .userId(u.getId())
                 .displayName(u.getFullName())
                 .profilePicture(u.getProfilePicture())
                 .role(m.getRole())
-                .joinedAt(m.getJoinedAt())
+                .activeSince(m.getActiveSince())
                 .build();
     }
 }

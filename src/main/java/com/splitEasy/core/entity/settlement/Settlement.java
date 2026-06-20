@@ -1,28 +1,29 @@
 package com.splitEasy.core.entity.settlement;
 
-import com.github.f4b6a3.ulid.Ulid;
 import com.splitEasy.core.entity.User;
+import com.splitEasy.core.entity.base.SoftDeletableEntity;
 import com.splitEasy.core.entity.group.Group;
 import com.splitEasy.core.entity.reference.Currency;
 import com.splitEasy.core.enums.SettlementMethod;
 import com.splitEasy.core.enums.SettlementStatus;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.time.Instant;
 
 @Entity
 @Table(name = "settlements")
+@SQLDelete(sql = "update settlements set deleted_at = now() where id = ?")
+@SQLRestriction("deleted_at is null")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-public class Settlement {
-
-    @Id
-    @Column(name = "id", updatable = false, nullable = false, length = 26)
-    private String id;  // ULID
+@SuperBuilder
+public class Settlement extends SoftDeletableEntity {
 
     // Settlements clear GROUP balances, so always group-scoped (never personal).
     @ManyToOne(fetch = FetchType.LAZY)
@@ -58,34 +59,13 @@ public class Settlement {
     private SettlementMethod method;
 
     // Did the app initiate/drive the payment (vs a manually recorded settlement)?
-    // App-initiated + rail success -> can auto-confirm; manually recorded -> needs
-    // counterparty confirmation (propose -> confirm).
     @Column(name = "app_initiated", nullable = false)
     @Builder.Default
     private boolean appInitiated = false;
 
     private String note;  // nullable memo
 
-    @Column(nullable = false, updatable = false)
-    @Builder.Default
-    private Instant createdAt = Instant.now();
-
-    @Column(nullable = false)
-    @Builder.Default
-    private Instant updatedAt = Instant.now();
-
     // Set when status -> CONFIRMED (the moment balance deltas are applied).
+    // Domain timestamp, NOT an audit field — kept here, not in the base.
     private Instant confirmedAt;  // nullable
-
-    @PrePersist
-    private void prePersist() {
-        if (id == null) {
-            id = Ulid.fast().toString();
-        }
-    }
-
-    @PreUpdate
-    private void onUpdate() {
-        this.updatedAt = Instant.now();
-    }
 }

@@ -10,6 +10,8 @@ import com.splitEasy.core.security.TokenStore;
 import com.splitEasy.core.services.user.UserService;
 import org.springframework.stereotype.Service;
 
+import java.util.UUID;
+
 @Service
 public final class RefreshAuthenticationService implements AuthenticationProvider<RefreshTokenAuthRequestDto> {
 
@@ -37,16 +39,16 @@ public final class RefreshAuthenticationService implements AuthenticationProvide
     public AuthResponseDTO authenticate(RefreshTokenAuthRequestDto request) {
         String refreshToken = request.getRefreshToken();
 
-        String userPublicId = jwtService.getUserPublicIdFromToken(refreshToken, TokenType.REFRESH.getValue());
+        UUID userId = jwtService.getUserIdFromToken(refreshToken, TokenType.REFRESH.getValue());
 
-        String storedToken = tokenStore.getRefreshToken(userPublicId)
+        String storedToken = tokenStore.getRefreshToken(userId)
                 .orElseThrow(() -> new RuntimeException("Refresh token expired or no longer valid"));
 
         if (!storedToken.equals(refreshToken)) {
             throw new RuntimeException("Refresh token expired or no longer valid");
         }
 
-        User user = userService.getByPublicId(userPublicId)
+        User user = userService.getById(userId)
                 .orElseThrow(() -> new RuntimeException("User does not exist"));
 
         return sessionIssuer.issueSession(user, AuthProvider.REFRESH, false);

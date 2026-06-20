@@ -1,9 +1,10 @@
 package com.splitEasy.core.entity.expense;
 
-import com.github.f4b6a3.ulid.Ulid;
 import com.splitEasy.core.entity.User;
+import com.splitEasy.core.entity.base.AuditableEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 @Entity
 @Table(
@@ -17,12 +18,8 @@ import lombok.*;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-public class ExpensePayer {
-
-    @Id
-    @Column(name = "id", updatable = false, nullable = false, length = 26)
-    private String id;  // ULID
+@SuperBuilder
+public class ExpensePayer extends AuditableEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "expense_id", nullable = false)
@@ -34,12 +31,5 @@ public class ExpensePayer {
 
     // Minor units of expense.currency. Sum of all payers == expense.totalAmountMinor.
     @Column(name = "amount_paid_minor", nullable = false)
-    private Long amountPaidMinor;
-
-    @PrePersist
-    private void prePersist() {
-        if (id == null) {
-            id = Ulid.fast().toString();
-        }
-    }
+    private Long amountPaidMinor;  // money, stays Long; mutable
 }

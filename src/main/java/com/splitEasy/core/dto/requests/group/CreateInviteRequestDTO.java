@@ -10,6 +10,7 @@ import lombok.Setter;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -20,15 +21,15 @@ public class CreateInviteRequestDTO {
     @NotNull
     private InviteLinkType type;
 
-    private List<String> invitedUsers;   // optional — null/empty = open to anyone
+    private List<UUID> invitedUserIds;
 
-    private Instant expiresAt;            // TEMPORARY only
-    private Integer maxUses;              // TEMPORARY only
+    private Instant expiresAt;
+    private Integer maxUses;
 
     @AssertTrue(message = "PRIMARY invites cannot set expiresAt or maxUses")
     public boolean isLimitsValidForType() {
         if (type != InviteLinkType.PRIMARY) {
-            return true;            // rule only applies to PRIMARY
+            return true;
         }
         return expiresAt == null && maxUses == null;
     }

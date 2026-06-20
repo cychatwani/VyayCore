@@ -1,9 +1,10 @@
 package com.splitEasy.core.entity;
 
+import com.splitEasy.core.entity.base.SoftDeletableEntity;
 import com.splitEasy.core.enums.AuthProvider;
 import jakarta.persistence.*;
 import lombok.*;
-import com.github.f4b6a3.ulid.Ulid;
+import lombok.experimental.SuperBuilder;
 
 @Entity
 @Table(name = "users")
@@ -11,16 +12,8 @@ import com.github.f4b6a3.ulid.Ulid;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-public class User {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY) // auto-increment BIGINT
-    @Column(name = "id", updatable = false, nullable = false)
-    private Long id;  // internal numeric PK (never exposed)
-
-    @Column(nullable = false, unique = true, updatable = false, length = 26)
-    private String publicId;  // ULID exposed in API
+@SuperBuilder
+public class User extends SoftDeletableEntity {
 
     @Column(nullable = false)
     private String firstName;
@@ -29,7 +22,7 @@ public class User {
     private String lastName;
 
     @Column(nullable = false)
-    private String fullName;
+    private String fullName;  // denormalized from firstName + lastName
 
     private String profilePicture;
 
@@ -47,20 +40,17 @@ public class User {
     @Builder.Default
     private boolean emailVerified = false;
 
-
+    /**
+     * Keeps fullName in sync with firstName/lastName on insert and update.
+     * The id (UUIDv7), created/updated timestamps, and deletedAt all come from
+     * the base hierarchy. User intentionally declares NO @SQLDelete/@SQLRestriction:
+     * deleted users stay queryable so historical FK references still resolve, and
+     * "active user" is enforced in the auth queries (findByEmail ... and deleted_at is null).
+     */
     @PrePersist
-    private void prePersist() {
-        if (publicId == null) {
-            publicId = Ulid.fast().toString(); // generate ULID for API
-        }
-        updateFullName();
-    }
-
     @PreUpdate
     private void updateFullName() {
-        this.fullName = (firstName != null ? firstName : "") +
-                (lastName != null ? " " + lastName : "");
+        this.fullName = (firstName != null ? firstName : "")
+                + (lastName != null ? " " + lastName : "");
     }
 }
-
-

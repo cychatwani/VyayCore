@@ -24,13 +24,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class GroupInviteService {
 
-    /** PRIMARY links never expire; the JWT still needs a cap, so give it a long life.
-     *  Revocation is enforced by the row's isActive, not the token's exp. */
-    private static final long PRIMARY_TOKEN_TTL_MS = 3650L * 24 * 60 * 60 * 1000; // ~10 years
+    private static final long PRIMARY_TOKEN_TTL_MS = 3650L * 24 * 60 * 60 * 1000;
 
     private final GroupRepository groupRepository;
     private final GroupMembershipRepository groupMembershipRepository;
@@ -51,39 +50,35 @@ public class GroupInviteService {
     }
 
     @Transactional
-    public InviteResponseDTO createInvite(User principal, String groupId, CreateInviteRequestDTO request) {
+    public InviteResponseDTO createInvite(User principal, UUID groupId, CreateInviteRequestDTO request) {
         Group group = groupRepository.findById(groupId)
                 .filter(g -> !g.isDeleted())
                 .orElseThrow(GroupNotFoundException::new);
 
-        // requester must be an active member
         GroupMembership me = groupMembershipRepository
                 .findByGroupIdAndUserIdAndStatus(groupId, principal.getId(), MembershipStatus.ACTIVE)
                 .orElseThrow(NotAMemberException::new);
 
-        // PRIMARY requires ADMIN; TEMPORARY is fine for any active member
         if (request.getType() == InviteLinkType.PRIMARY && me.getRole() != GroupRole.ADMIN) {
             throw new AdminOnlyException();
         }
 
-        // invited users (if any) must not already be active members
-        List<String> invited = request.getInvitedUsers();
+        List<UUID> invited = request.getInvitedUserIds();
         if (invited != null && !invited.isEmpty()) {
-            List<String> alreadyMembers = groupMembershipRepository
-                    .findExistingMemberPublicIds(groupId, invited, MembershipStatus.ACTIVE);
+            List<UUID> alreadyMembers = groupMembershipRepository
+                    .findExistingMemberUserIds(groupId, invited, MembershipStatus.ACTIVE);
             if (!alreadyMembers.isEmpty()) {
                 throw new AlreadyAMemberException(
-                        "Already a member: " + String.join(", ", alreadyMembers));
+                        "Already a member: " + alreadyMembers.stream().map(UUID::toString).reduce((a, b) -> a + ", " + b).orElse(""));
             }
         }
 
         Instant expiresAt;
         Integer maxUses;
         if (request.getType() == InviteLinkType.PRIMARY) {
-            // rotating PRIMARY: deactivate the current one first
             groupInviteLinkRepository.deactivateActiveLinksOfType(groupId, InviteLinkType.PRIMARY);
-            expiresAt = null;   // never expires
-            maxUses = null;     // unlimited
+            expiresAt = null;
+            maxUses = null;
         } else {
             expiresAt = request.getExpiresAt();
             maxUses = request.getMaxUses();

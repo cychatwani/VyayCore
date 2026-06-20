@@ -6,11 +6,12 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.time.Instant;
+import java.util.UUID;
 
 @Getter
 @Builder
 public class InviteSummaryDTO {
-    private String id;
+    private UUID inviteId;
     private InviteLinkType type;
     private Instant expiresAt;
     private Integer maxUses;
@@ -19,7 +20,7 @@ public class InviteSummaryDTO {
 
     public static InviteSummaryDTO from(GroupInviteLink l) {
         return InviteSummaryDTO.builder()
-                .id(l.getId())
+                .inviteId(l.getId())
                 .type(l.getType())
                 .expiresAt(l.getExpiresAt())
                 .maxUses(l.getMaxUses())

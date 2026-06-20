@@ -1,6 +1,5 @@
 package com.splitEasy.core.security;
 
-import com.splitEasy.core.enums.InviteLinkType;
 import com.splitEasy.core.enums.TokenType;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -13,6 +12,8 @@ import org.springframework.stereotype.Component;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import java.util.stream.Collectors;
 import javax.crypto.SecretKey;
 
 
@@ -35,30 +36,24 @@ public class JwtService {
         this.emailVerificationExpiration = emailVerificationExpiration;
     }
 
-    // ---- Generation (existing API — unchanged) ----
-
-    public String generateAccessToken(String publicId) {
-        return buildToken(publicId, TokenType.ACCESS.getValue(), accessExpiration);
+    public String generateAccessToken(UUID userId) {
+        return buildToken(userId.toString(), TokenType.ACCESS.getValue(), accessExpiration);
     }
 
-    public String generateRefreshToken(String publicId) {
-        return buildToken(publicId, TokenType.REFRESH.getValue(), refreshExpiration);
+    public String generateRefreshToken(UUID userId) {
+        return buildToken(userId.toString(), TokenType.REFRESH.getValue(), refreshExpiration);
     }
 
-    public String generateEmailVerificationToken(String publicId) {
-        return buildToken(publicId, TokenType.EMAIL_VERIFICATION.getValue(), emailVerificationExpiration);
+    public String generateEmailVerificationToken(UUID userId) {
+        return buildToken(userId.toString(), TokenType.EMAIL_VERIFICATION.getValue(), emailVerificationExpiration);
     }
 
-    // ---- Generation: invite (typed in; the claim map is confined here) ----
-
-    public String generateGroupInviteToken(String code, List<String> invitedUsers, long ttl) {
-        Map<String, Object> extra = (invitedUsers == null || invitedUsers.isEmpty())
+    public String generateGroupInviteToken(String code, List<UUID> invitedUserIds, long ttl) {
+        Map<String, Object> extra = (invitedUserIds == null || invitedUserIds.isEmpty())
                 ? null
-                : Map.of("invitedUsers", invitedUsers);
+                : Map.of("invitedUsers", invitedUserIds.stream().map(UUID::toString).toList());
         return buildToken(code, TokenType.GROUP_INVITE.getValue(), extra, ttl);
     }
-
-    // ---- Generation primitives (private) ----
 
     private String buildToken(String subject, String type, Map<String, Object> extraClaims, long ttl) {
         var builder = Jwts.builder()
@@ -76,8 +71,6 @@ public class JwtService {
         return buildToken(subject, type, null, ttl);
     }
 
-    // ---- Parsing ----
-
     public TokenClaims parse(String token) {
         Claims c = verifyAndParse(token);
         try {
@@ -93,12 +86,10 @@ public class JwtService {
                 }
             };
         } catch (IllegalArgumentException | NullPointerException e) {
-            // unknown "type", or a missing/garbage "inviteType" on a group-invite token
             throw new BadCredentialsException("Malformed token claims", e);
         }
     }
 
-    /** Typed-expect helper for the invite join path. */
     public TokenClaims.GroupInvite parseGroupInvite(String token) {
         if (parse(token) instanceof TokenClaims.GroupInvite invite) {
             return invite;
@@ -120,14 +111,16 @@ public class JwtService {
         }
     }
 
-    // ---- Convenience (existing API — now over parse) ----
-
-    public String getUserPublicIdFromToken(String token, String allowedAccessType) {
+    public UUID getUserIdFromToken(String token, String allowedTokenType) {
         TokenClaims claims = parse(token);
-        if (!claims.type().getValue().equals(allowedAccessType)) {
+        if (!claims.type().getValue().equals(allowedTokenType)) {
             throw new BadCredentialsException("Invalid token type");
         }
-        return claims.subject();
+        try {
+            return UUID.fromString(claims.subject());
+        } catch (IllegalArgumentException e) {
+            throw new BadCredentialsException("Invalid user id in token", e);
+        }
     }
 
     public String getSubject(String token) {

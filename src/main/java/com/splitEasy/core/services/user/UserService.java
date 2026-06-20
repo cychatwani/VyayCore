@@ -8,6 +8,7 @@ import com.splitEasy.core.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class UserService {
@@ -21,14 +22,16 @@ public class UserService {
         return userRepository.findByEmail(email);
     }
 
-    public Optional<User> getByPublicId (String publicId) {return userRepository.findByPublicId(publicId);}
+    public Optional<User> getById(UUID userId) {
+        return userRepository.findById(userId);
+    }
 
     public boolean existsByEmail(String email) {
         return userRepository.existsByEmail(email);
     }
 
-    public boolean exitsByPublicUserID(String publicID) {
-        return userRepository.existsByPublicId(publicID);
+    public boolean existsById(UUID userId) {
+        return userRepository.existsById(userId);
     }
 
     public User registerPasswordUser(String firstName, String lastName, String email,
@@ -52,7 +55,7 @@ public class UserService {
 
 
     public User createIfNotExists(String firstName, String lastName, String email, String profilePicture, AuthProvider provider, boolean emailVerified) {
-        Optional<User> existingUser = userRepository.findByEmail(email); // see note below
+        Optional<User> existingUser = userRepository.findByEmail(email);
         if (existingUser.isPresent()) {
             return existingUser.get();
         }

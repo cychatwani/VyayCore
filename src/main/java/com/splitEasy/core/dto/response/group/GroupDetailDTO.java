@@ -11,11 +11,12 @@ import lombok.Getter;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 @Getter
 @Builder
 public class GroupDetailDTO {
-    private String id;
+    private UUID groupId;
     private String name;
     private String description;
     private GroupType type;
@@ -24,7 +25,7 @@ public class GroupDetailDTO {
     private Integer memberCount;
     private GroupRole myRole;
     private List<MemberDTO> members;
-    private List<MemberBalanceDTO> memberBalances;   // per currency per member; empty until BalanceLedger
+    private List<MemberBalanceDTO> memberBalances;
     private List<InviteSummaryDTO> invites;
     private Instant createdAt;
     private Instant updatedAt;
@@ -33,7 +34,7 @@ public class GroupDetailDTO {
                                       List<GroupMembership> members,
                                       List<GroupInviteLink> invites) {
         return GroupDetailDTO.builder()
-                .id(g.getId())
+                .groupId(g.getId())
                 .name(g.getName())
                 .description(g.getDescription())
                 .type(g.getType())
@@ -42,7 +43,7 @@ public class GroupDetailDTO {
                 .memberCount(g.getMemberCount())
                 .myRole(myRole)
                 .members(members.stream().map(MemberDTO::from).toList())
-                .memberBalances(List.of())   // placeholder
+                .memberBalances(List.of())
                 .invites(invites.stream().map(InviteSummaryDTO::from).toList())
                 .createdAt(g.getCreatedAt())
                 .updatedAt(g.getUpdatedAt())

@@ -15,6 +15,8 @@ import com.splitEasy.core.repository.UserProfileRepository;
 import com.splitEasy.core.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
+import java.util.UUID;
+
 @Service
 public class UserProfileService {
 
@@ -33,11 +35,11 @@ public class UserProfileService {
         this.userRepository = userRepository;
     }
 
-    public boolean hasProfile(Long userId) {
-        return userProfileRepository.existsByUserId(userId);
+    public boolean hasProfile(UUID userId) {
+        return userProfileRepository.existsById(userId);
     }
 
-    public UserProfile getProfile(Long userId) {
+    public UserProfile getProfile(UUID userId) {
         return userProfileRepository.findById(userId)
                 .orElseThrow(ProfileNotFoundException::new);
     }
@@ -47,13 +49,13 @@ public class UserProfileService {
                 .orElseThrow(ProfileNotFoundException::new);
 
         if (request.getDefaultCurrency() != null) {
-            Currency currency = currencyRepository.findById(request.getDefaultCurrency())
+            Currency currency = currencyRepository.findByCode(request.getDefaultCurrency())
                     .orElseThrow(() -> new InvalidCurrencyException(request.getDefaultCurrency()));
             profile.setDefaultCurrency(currency);
         }
 
         if (request.getDefaultLanguage() != null) {
-            Language language = languageRepository.findById(request.getDefaultLanguage())
+            Language language = languageRepository.findByCode(request.getDefaultLanguage())
                     .orElseThrow(() -> new InvalidLanguageException(request.getDefaultLanguage()));
             profile.setLanguage(language);
         }
@@ -66,14 +68,14 @@ public class UserProfileService {
     }
 
     public UserProfile createProfile(User user, String currencyCode, String languageCode) {
-        if (userProfileRepository.existsByUserId(user.getId())) {
+        if (userProfileRepository.existsById(user.getId())) {
             throw new ProfileAlreadyExistsException();
         }
 
-        Currency currency = currencyRepository.findById(currencyCode)
+        Currency currency = currencyRepository.findByCode(currencyCode)
                 .orElseThrow(() -> new InvalidCurrencyException(currencyCode));
 
-        Language language = languageRepository.findById(languageCode)
+        Language language = languageRepository.findByCode(languageCode)
                 .orElseThrow(() -> new InvalidLanguageException(languageCode));
 
         User managedUser = userRepository.getReferenceById(user.getId());

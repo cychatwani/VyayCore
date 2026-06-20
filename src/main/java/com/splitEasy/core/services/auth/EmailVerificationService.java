@@ -9,6 +9,8 @@ import com.splitEasy.core.services.user.UserService;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Service;
 
+import java.util.UUID;
+
 @Service
 public class EmailVerificationService {
 
@@ -34,9 +36,9 @@ public class EmailVerificationService {
     }
 
     private User resolveAndVerify(String token) {
-        String publicId = jwtService.getUserPublicIdFromToken(token, TokenType.EMAIL_VERIFICATION.getValue());
+        UUID userId = jwtService.getUserIdFromToken(token, TokenType.EMAIL_VERIFICATION.getValue());
 
-        User user = userService.getByPublicId(publicId)
+        User user = userService.getById(userId)
                 .orElseThrow(() -> new BadCredentialsException("Invalid verification token"));
 
         if (!user.isEmailVerified()) {

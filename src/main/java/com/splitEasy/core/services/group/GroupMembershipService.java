@@ -26,6 +26,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.UUID;
 
 @Service
 public class GroupMembershipService {
@@ -53,7 +54,6 @@ public class GroupMembershipService {
 
     @Transactional
     public GroupDetailDTO join(User principal, String token) {
-        // JWT-level verify (signature/expiry/type); BadCredentialsException -> global handler
         TokenClaims.GroupInvite invite = jwtService.parseGroupInvite(token);
 
         GroupInviteLink link = groupInviteLinkRepository.findByCode(invite.code())
@@ -65,7 +65,7 @@ public class GroupMembershipService {
         if (link.getExpiresAt() != null && link.getExpiresAt().isBefore(Instant.now())) {
             throw new InviteLinkExpiredException();
         }
-        if (!invite.allows(principal.getPublicId())) {
+        if (!invite.allows(principal.getId())) {
             throw new UserNotInvitedException();
         }
 
@@ -73,29 +73,22 @@ public class GroupMembershipService {
         if (group.isDeleted()) {
             throw new GroupNotFoundException();
         }
-        String groupId = group.getId();
+        UUID groupId = group.getId();
 
-        // One lookup serves both the already-member check and the reactivate/insert decision
         GroupMembership existing = groupMembershipRepository
-                .findByGroupIdAndUserId(groupId, principal.getId())
+                .findAnyByGroupIdAndUserId(groupId, principal.getId())
                 .orElse(null);
 
-        if (existing != null && existing.getStatus() == MembershipStatus.ACTIVE) {
+        if (existing != null && existing.getStatus() == MembershipStatus.ACTIVE && existing.getDeletedAt() == null) {
             throw new AlreadyAMemberException("You are already a member of this group");
         }
 
-        // Atomic, race-safe use-cap claim: 0 rows == exhausted
         if (groupInviteLinkRepository.incrementUseCountIfAvailable(link.getId()) == 0) {
             throw new InviteLinkExhaustedException();
         }
 
         if (existing != null) {
-            // rejoin: flip the soft-deleted row back to ACTIVE
-            existing.setStatus(MembershipStatus.ACTIVE);
-            existing.setDeleted(false);
-            existing.setLeftAt(null);
-            existing.setRole(GroupRole.MEMBER);
-            groupMembershipRepository.save(existing);
+            groupMembershipRepository.reactivateMembership(groupId, principal.getId());
         } else {
             User userRef = userRepository.getReferenceById(principal.getId());
             groupMembershipRepository.save(GroupMembership.builder()
@@ -108,12 +101,11 @@ public class GroupMembershipService {
 
         groupRepository.incrementMemberCount(groupId);
 
-        // clearAutomatically on the bump above means this re-reads fresh counts
         return groupService.getGroupDetail(principal, groupId);
     }
 
     @Transactional
-    public void leave(User principal, String groupId) {
+    public void leave(User principal, UUID groupId) {
         GroupMembership me = groupMembershipRepository
                 .findByGroupIdAndUserIdAndStatus(groupId, principal.getId(), MembershipStatus.ACTIVE)
                 .orElseThrow(NotAMemberException::new);
@@ -123,9 +115,9 @@ public class GroupMembershipService {
         }
 
         me.setStatus(MembershipStatus.LEFT);
-        me.setDeleted(true);
         me.setLeftAt(Instant.now());
         groupMembershipRepository.save(me);
+        groupMembershipRepository.delete(me);
 
         groupRepository.decrementMemberCount(groupId);
     }

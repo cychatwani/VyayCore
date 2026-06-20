@@ -23,6 +23,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.UUID;
+
 @RestController
 @RequestMapping("/groups")
 public class GroupController {
@@ -64,14 +66,14 @@ public class GroupController {
     @GetMapping("/{groupId}")
     public ResponseEntity<ApiResponse<GroupDetailDTO>> getGroup(
             @AuthenticationPrincipal User user,
-            @PathVariable String groupId) {
+            @PathVariable UUID groupId) {
         return ResponseEntity.ok(ApiResponse.success(groupService.getGroupDetail(user, groupId)));
     }
 
     @PostMapping("/{groupId}/invites")
     public ResponseEntity<ApiResponse<InviteResponseDTO>> createInvite(
             @AuthenticationPrincipal User user,
-            @PathVariable String groupId,
+            @PathVariable UUID groupId,
             @Valid @RequestBody CreateInviteRequestDTO request) {
         InviteResponseDTO invite = groupInviteService.createInvite(user, groupId, request);
         return ResponseEntity
@@ -82,7 +84,7 @@ public class GroupController {
     @PostMapping("/{groupId}/leave")
     public ResponseEntity<ApiResponse<Void>> leaveGroup(
             @AuthenticationPrincipal User user,
-            @PathVariable String groupId) {
+            @PathVariable UUID groupId) {
         groupMembershipService.leave(user, groupId);
         return ResponseEntity.ok(ApiResponse.success(null, "You have left the group"));
     }

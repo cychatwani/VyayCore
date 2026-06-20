@@ -8,11 +8,12 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.time.Instant;
+import java.util.UUID;
 
 @Getter
 @Builder
 public class GroupResponseDTO {
-    private String id;
+    private UUID groupId;
     private String name;
     private String description;
     private GroupType type;
@@ -23,7 +24,7 @@ public class GroupResponseDTO {
 
     public static GroupResponseDTO from(Group group, User creator) {
         return GroupResponseDTO.builder()
-                .id(group.getId())
+                .groupId(group.getId())
                 .name(group.getName())
                 .description(group.getDescription())
                 .type(group.getType())

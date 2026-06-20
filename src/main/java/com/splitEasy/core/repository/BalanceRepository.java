@@ -7,8 +7,9 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.Optional;
+import java.util.UUID;
 
-public interface BalanceRepository extends JpaRepository<Balance, String> {
+public interface BalanceRepository extends JpaRepository<Balance, UUID> {
 
     /**
      * Atomically applies a signed delta to (group, user, currency), inserting the row
@@ -24,13 +25,11 @@ public interface BalanceRepository extends JpaRepository<Balance, String> {
             DO UPDATE SET net_amount_minor = balances.net_amount_minor + EXCLUDED.net_amount_minor,
                           updated_at = now()
             """, nativeQuery = true)
-    void applyDelta(@Param("id") String id,
-                    @Param("groupId") String groupId,
-                    @Param("userId") Long userId,
+    void applyDelta(@Param("id") UUID id,
+                    @Param("groupId") UUID groupId,
+                    @Param("userId") UUID userId,
                     @Param("currencyCode") String currencyCode,
                     @Param("delta") long delta);
 
-    // Read side (for the group-balances view later).
-    Optional<Balance> findByGroupIdAndUserIdAndCurrencyCode(String groupId, Long userId, String currencyCode);
-
+    Optional<Balance> findByGroupIdAndUserIdAndCurrencyCode(UUID groupId, UUID userId, String currencyCode);
 }

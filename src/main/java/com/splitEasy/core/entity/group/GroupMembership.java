@@ -1,11 +1,14 @@
 package com.splitEasy.core.entity.group;
 
-import com.github.f4b6a3.ulid.Ulid;
 import com.splitEasy.core.entity.User;
+import com.splitEasy.core.entity.base.SoftDeletableEntity;
 import com.splitEasy.core.enums.GroupRole;
 import com.splitEasy.core.enums.MembershipStatus;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.time.Instant;
 
@@ -17,16 +20,14 @@ import java.time.Instant;
                 columnNames = {"group_id", "user_id"}
         )
 )
+@SQLDelete(sql = "update group_memberships set deleted_at = now() where id = ?")
+@SQLRestriction("deleted_at is null")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-public class GroupMembership {
-
-    @Id
-    @Column(name = "id", updatable = false, nullable = false, length = 26)
-    private String id;  // ULID
+@SuperBuilder
+public class GroupMembership extends SoftDeletableEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "group_id", nullable = false)
@@ -45,20 +46,10 @@ public class GroupMembership {
     @Builder.Default
     private MembershipStatus status = MembershipStatus.ACTIVE;
 
+    // Start of the CURRENT stint — resets on rejoin. (createdAt = first-ever join, immutable.)
     @Column(nullable = false)
     @Builder.Default
-    private boolean isDeleted = false;  // maps to is_deleted
+    private Instant activeSince  = Instant.now();
 
-    @Column(nullable = false, updatable = false)
-    @Builder.Default
-    private Instant joinedAt = Instant.now();
-
-    private Instant leftAt;  // nullable, set on leave/remove
-
-    @PrePersist
-    private void prePersist() {
-        if (id == null) {
-            id = Ulid.fast().toString();
-        }
-    }
+    private Instant leftAt;  // nullable; set on leave/remove, cleared on rejoin
 }

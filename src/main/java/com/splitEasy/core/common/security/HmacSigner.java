@@ -1,6 +1,6 @@
 package com.splitEasy.core.common.security;
 
-import com.github.f4b6a3.ulid.Ulid;
+import com.github.f4b6a3.uuid.UuidCreator;
 import com.splitEasy.core.entity.User;
 import com.splitEasy.core.entity.balance.BalanceLedgerEntry;
 import com.splitEasy.core.entity.group.Group;
@@ -17,6 +17,7 @@ import java.security.MessageDigest;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.HexFormat;
+import java.util.UUID;
 
 @Component
 public class HmacSigner {
@@ -30,10 +31,8 @@ public class HmacSigner {
     }
 
     public BalanceLedgerEntry signedEntry(Group group, User user, Currency currency,
-                                          long deltaMinor, LedgerSourceType sourceType, String sourceId) {
-        String id = Ulid.fast().toString();
-        // Truncate to millis so the value we sign equals the value Postgres stores
-        // (timestamp keeps micros; we sign epoch-millis - this removes any round-trip drift).
+                                          long deltaMinor, LedgerSourceType sourceType, UUID sourceId) {
+        UUID id = UuidCreator.getTimeOrderedEpoch();
         Instant createdAt = Instant.now().truncatedTo(ChronoUnit.MILLIS);
 
         String hmac = hmacHex(canonical(
@@ -57,30 +56,28 @@ public class HmacSigner {
         String expected = hmacHex(canonical(
                 e.getId(), e.getGroup().getId(), e.getUser().getId(), e.getCurrency().getCode(),
                 e.getDeltaMinor(), e.getSourceType(), e.getSourceId(), e.getCreatedAt()));
-        return MessageDigest.isEqual(                       // constant-time
+        return MessageDigest.isEqual(
                 expected.getBytes(StandardCharsets.UTF_8),
                 e.getHmac().getBytes(StandardCharsets.UTF_8));
     }
 
-    // The ONE definition of the signed payload. Sign and verify both go through here,
-    // so the format can't drift. Changing this format invalidates every existing signature.
-    private String canonical(String id, String groupId, Long userId, String currencyCode,
-                             long deltaMinor, LedgerSourceType sourceType, String sourceId,
+    private String canonical(UUID id, UUID groupId, UUID userId, String currencyCode,
+                             long deltaMinor, LedgerSourceType sourceType, UUID sourceId,
                              Instant createdAt) {
         return String.join("|",
-                id,
-                groupId,
-                String.valueOf(userId),
+                id.toString(),
+                groupId.toString(),
+                userId.toString(),
                 currencyCode,
                 String.valueOf(deltaMinor),
                 sourceType.name(),
-                sourceId,
+                sourceId.toString(),
                 String.valueOf(createdAt.toEpochMilli()));
     }
 
     private String hmacHex(String canonical) {
         try {
-            Mac mac = Mac.getInstance(ALGORITHM);            // Mac isn't thread-safe -> per call
+            Mac mac = Mac.getInstance(ALGORITHM);
             mac.init(key);
             return HexFormat.of().formatHex(mac.doFinal(canonical.getBytes(StandardCharsets.UTF_8)));
         } catch (GeneralSecurityException ex) {

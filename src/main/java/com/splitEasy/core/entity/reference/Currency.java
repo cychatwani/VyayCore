@@ -1,19 +1,25 @@
 package com.splitEasy.core.entity.reference;
 
+import com.splitEasy.core.entity.base.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 @Entity
-@Table(name = "currencies")
+@Table(
+        name = "currencies",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uk_currency_code", columnNames = "code")
+        }
+)
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-public class Currency {
+@SuperBuilder
+public class Currency extends BaseEntity {
 
-    @Id
-    @Column(length = 3)
+    @Column(nullable = false, length = 3, unique = true)
     private String code;
 
     @Column(nullable = false)

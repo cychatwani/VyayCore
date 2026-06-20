@@ -1,20 +1,22 @@
 package com.splitEasy.core.entity;
 
+import com.splitEasy.core.entity.base.SoftDeletableEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 
 @Entity
 @Table(name = "notification_templates")
+@SQLDelete(sql = "update notification_templates set deleted_at = now() where id = ?")
+@SQLRestriction("deleted_at is null")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-public class NotificationTemplate {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+@SuperBuilder
+public class NotificationTemplate extends SoftDeletableEntity {
 
     @Column(nullable = false, unique = true, length = 50)
     private String type; // e.g. "EMAIL_VERIFICATION", "PASSWORD_RESET"

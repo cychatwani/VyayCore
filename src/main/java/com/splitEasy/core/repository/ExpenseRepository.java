@@ -6,12 +6,10 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.Optional;
+import java.util.UUID;
 
-public interface ExpenseRepository extends JpaRepository<Expense, String> {
+public interface ExpenseRepository extends JpaRepository<Expense, UUID> {
 
-    // Canonical single fetch that ignores soft-deleted rows.
-    // Explicit JPQL on the isDeleted attribute to sidestep derived-query ambiguity
-    // with the Lombok boolean (field isDeleted -> getter isDeleted()).
-    @Query("SELECT e FROM Expense e WHERE e.id = :id AND e.isDeleted = false")
-    Optional<Expense> findActiveById(@Param("id") String id);
+    @Query("SELECT e FROM Expense e WHERE e.id = :id AND e.deletedAt IS NULL")
+    Optional<Expense> findActiveById(@Param("id") UUID id);
 }

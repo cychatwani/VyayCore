@@ -7,20 +7,21 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
 @Getter
 @Builder
 public class ExpenseShareResponseDTO {
 
-    private String userPublicId;
+    private UUID userId;
     private Long owedAmountMinor;
-    private BigDecimal owedAmount;    // major, for display
-    private BigDecimal percentage;    // null unless PERCENTAGE
-    private Integer shareWeight;      // null unless SHARES
+    private BigDecimal owedAmount;
+    private BigDecimal percentage;
+    private Integer shareWeight;
 
     public static ExpenseShareResponseDTO from(ExpenseShare s, Currency currency) {
         return ExpenseShareResponseDTO.builder()
-                .userPublicId(s.getUser().getPublicId())
+                .userId(s.getUser().getId())
                 .owedAmountMinor(s.getOwedAmountMinor())
                 .owedAmount(MoneyUtils.toMajor(s.getOwedAmountMinor(), currency))
                 .percentage(s.getPercentage())

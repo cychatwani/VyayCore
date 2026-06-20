@@ -29,10 +29,10 @@ public class SessionIssuer {
     }
 
     public AuthResponseDTO issueSession(User user, AuthProvider authType, boolean isNewUser) {
-        String accessToken = jwtService.generateAccessToken(user.getPublicId());
-        String refreshToken = jwtService.generateRefreshToken(user.getPublicId());
+        String accessToken = jwtService.generateAccessToken(user.getId());
+        String refreshToken = jwtService.generateRefreshToken(user.getId());
 
-        tokenStore.storeRefreshToken(user.getPublicId(), refreshToken, refreshExpiration);
+        tokenStore.storeRefreshToken(user.getId(), refreshToken, refreshExpiration);
 
         UserDetailsDTO userDetails = UserDetailsDTO.builder()
                 .firstName(user.getFirstName())
@@ -40,7 +40,7 @@ public class SessionIssuer {
                 .fullName(user.getFullName())
                 .profilePicture(user.getProfilePicture())
                 .email(user.getEmail())
-                .id(user.getPublicId())
+                .userId(user.getId())
                 .hasProfile(userProfileService.hasProfile(user.getId()))
                 .build();
 

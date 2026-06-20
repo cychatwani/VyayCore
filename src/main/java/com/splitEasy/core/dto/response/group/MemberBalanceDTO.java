@@ -5,10 +5,11 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.util.List;
+import java.util.UUID;
 
 @Getter
 @Builder
 public class MemberBalanceDTO {
-    private String publicId;
-    private List<BalanceDTO> balances;   // net per currency, e.g. [{INR, +1000}, {USD, -299}]
+    private UUID userId;
+    private List<BalanceDTO> balances;
 }

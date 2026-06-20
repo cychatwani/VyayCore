@@ -1,9 +1,10 @@
 package com.splitEasy.core.entity.expense;
 
-import com.github.f4b6a3.ulid.Ulid;
 import com.splitEasy.core.entity.User;
+import com.splitEasy.core.entity.base.AuditableEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 import java.math.BigDecimal;
 
@@ -19,12 +20,8 @@ import java.math.BigDecimal;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-public class ExpenseShare {
-
-    @Id
-    @Column(name = "id", updatable = false, nullable = false, length = 26)
-    private String id;  // ULID
+@SuperBuilder
+public class ExpenseShare extends AuditableEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "expense_id", nullable = false)
@@ -49,11 +46,4 @@ public class ExpenseShare {
 
     @Column(name = "share_weight")
     private Integer shareWeight;  // nullable
-
-    @PrePersist
-    private void prePersist() {
-        if (id == null) {
-            id = Ulid.fast().toString();
-        }
-    }
 }
