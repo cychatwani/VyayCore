@@ -10,6 +10,7 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
@@ -30,9 +31,17 @@ public class GroupDetailDTO {
     private Instant createdAt;
     private Instant updatedAt;
 
+    // Admins first, then members (any future role falls through after).
+    // Within each role: case-insensitive alphabetical by displayName.
+    private static final Comparator<MemberDTO> MEMBER_ORDER =
+            Comparator.comparingInt((MemberDTO m) -> m.getRole() == GroupRole.ADMIN ? 0 : 1)
+                    .thenComparing(MemberDTO::getDisplayName, String.CASE_INSENSITIVE_ORDER);
+
     public static GroupDetailDTO from(Group g, GroupRole myRole,
                                       List<GroupMembership> members,
-                                      List<GroupInviteLink> invites) {
+                                      List<GroupInviteLink> invites,
+                                      UUID currentUserId,
+                                      String frontendBaseUrl) {
         return GroupDetailDTO.builder()
                 .groupId(g.getId())
                 .name(g.getName())
@@ -42,9 +51,12 @@ public class GroupDetailDTO {
                 .createdBy(UserSummaryDTO.from(g.getCreatedBy()))
                 .memberCount(g.getMemberCount())
                 .myRole(myRole)
-                .members(members.stream().map(MemberDTO::from).toList())
+                .members(members.stream()
+                        .map(m -> MemberDTO.from(m, currentUserId))
+                        .sorted(MEMBER_ORDER)
+                        .toList())
                 .memberBalances(List.of())
-                .invites(invites.stream().map(InviteSummaryDTO::from).toList())
+                .invites(invites.stream().map(i -> InviteSummaryDTO.from(i, frontendBaseUrl)).toList())
                 .createdAt(g.getCreatedAt())
                 .updatedAt(g.getUpdatedAt())
                 .build();

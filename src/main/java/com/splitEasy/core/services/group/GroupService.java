@@ -22,6 +22,7 @@ import com.splitEasy.core.repository.GroupInviteLinkRepository;
 import com.splitEasy.core.repository.GroupMembershipRepository;
 import com.splitEasy.core.repository.GroupRepository;
 import com.splitEasy.core.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -38,17 +39,20 @@ public class GroupService {
     private final GroupInviteLinkRepository groupInviteLinkRepository;
     private final CurrencyRepository currencyRepository;
     private final UserRepository userRepository;
+    private final String frontendBaseUrl;
 
     public GroupService(GroupRepository groupRepository,
                         GroupMembershipRepository groupMembershipRepository,
                         GroupInviteLinkRepository groupInviteLinkRepository,
                         CurrencyRepository currencyRepository,
-                        UserRepository userRepository) {
+                        UserRepository userRepository,
+                        @Value("${app.frontend.base-url}") String frontendBaseUrl) {
         this.groupRepository = groupRepository;
         this.groupMembershipRepository = groupMembershipRepository;
         this.groupInviteLinkRepository = groupInviteLinkRepository;
         this.currencyRepository = currencyRepository;
         this.userRepository = userRepository;
+        this.frontendBaseUrl = frontendBaseUrl;
     }
 
     @Transactional
@@ -114,6 +118,6 @@ public class GroupService {
         List<GroupInviteLink> invites =
                 groupInviteLinkRepository.findByGroupIdAndIsActiveTrue(groupId);
 
-        return GroupDetailDTO.from(group, me.getRole(), members, invites);
+        return GroupDetailDTO.from(group, me.getRole(), members, invites, principal.getId(), frontendBaseUrl);
     }
 }
