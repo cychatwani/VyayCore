@@ -16,13 +16,25 @@ function readNames(file) {
     .split('\n').map((s) => s.trim()).filter(Boolean);
 }
 
+// Strips a leading UTF-8 BOM if present. Excel / Notepad on Windows like to add one.
+function stripBom(s) {
+  return s.charCodeAt(0) === 0xFEFF ? s.slice(1) : s;
+}
+
 function loadUsers() {
   if (!fs.existsSync(CSV_PATH)) {
     fs.writeFileSync(CSV_PATH, CSV_HEADER + '\n');
     return [];
   }
-  const lines = fs.readFileSync(CSV_PATH, 'utf8').split('\n').map((s) => s.trim()).filter(Boolean);
-  return lines.slice(1).map((line) => {
+  const raw = stripBom(fs.readFileSync(CSV_PATH, 'utf8'));
+  const lines = raw.split('\n').map((s) => s.trim()).filter(Boolean);
+  if (lines.length === 0) return [];
+
+  // Detect header explicitly instead of blindly slicing — survives a missing or extra header.
+  const firstCol = (lines[0].split(',')[0] || '').trim().toLowerCase();
+  const dataLines = firstCol === 'usernumber' ? lines.slice(1) : lines;
+
+  return dataLines.map((line) => {
     const [userNumber, firstName, lastName, email, password] = line.split(',');
     return { userNumber: Number(userNumber), firstName, lastName, email, password };
   });

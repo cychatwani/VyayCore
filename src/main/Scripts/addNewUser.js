@@ -42,14 +42,25 @@ function loadNames(file) {
   return names;
 }
 
+function stripBom(s) {
+  return s.charCodeAt(0) === 0xFEFF ? s.slice(1) : s;
+}
+
 function nextIndexFromCsv() {
   if (!fs.existsSync(CSV_PATH)) {
     fs.writeFileSync(CSV_PATH, CSV_HEADER + '\n');
     return 1;
   }
-  const lines = fs.readFileSync(CSV_PATH, 'utf8').split('\n').map(s => s.trim()).filter(Boolean);
+  const raw = stripBom(fs.readFileSync(CSV_PATH, 'utf8'));
+  const lines = raw.split('\n').map(s => s.trim()).filter(Boolean);
+  if (lines.length === 0) return 1;
+
+  // Detect header explicitly — survives a missing or extra header line.
+  const firstCol = (lines[0].split(',')[0] || '').trim().toLowerCase();
+  const dataStart = firstCol === 'usernumber' ? 1 : 0;
+
   let max = 0;
-  for (let i = 1; i < lines.length; i++) {            // skip header
+  for (let i = dataStart; i < lines.length; i++) {
     const n = parseInt(lines[i].split(',')[0], 10);
     if (Number.isInteger(n) && n > max) max = n;
   }

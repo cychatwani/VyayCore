@@ -4,11 +4,13 @@ import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.splitEasy.core.dto.wrapper.ApiResponse;
 import com.splitEasy.core.exception.auth.AuthException;
 import com.splitEasy.core.exception.business.BusinessException;
+import com.splitEasy.core.exception.business.StaleVersionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -89,6 +91,17 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.METHOD_NOT_ALLOWED)
                 .body(ApiResponse.error(msg, "ERR_METHOD_NOT_ALLOWED"));
+    }
+
+    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+    public ResponseEntity<ApiResponse<String>> handleOptimisticLock(ObjectOptimisticLockingFailureException ex) {
+        // Translate JPA's optimistic-lock failure into our typed BusinessException shape.
+        // Logged at info — this is an expected client-recoverable conflict, not a server fault.
+        log.info("Optimistic lock conflict on {} (id={})", ex.getPersistentClassName(), ex.getIdentifier());
+        StaleVersionException sve = new StaleVersionException();
+        return ResponseEntity
+                .status(sve.getHttpStatus())
+                .body(ApiResponse.error(sve.getMessage(), sve.getErrorCode()));
     }
 
     @ExceptionHandler(Exception.class)

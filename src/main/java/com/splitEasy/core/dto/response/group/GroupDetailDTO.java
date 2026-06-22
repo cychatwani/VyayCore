@@ -1,5 +1,6 @@
 package com.splitEasy.core.dto.response.group;
 
+import com.splitEasy.core.dto.base.VersionedResponse;
 import com.splitEasy.core.dto.response.User.UserSummaryDTO;
 import com.splitEasy.core.entity.group.Group;
 import com.splitEasy.core.entity.group.GroupInviteLink;
@@ -8,6 +9,7 @@ import com.splitEasy.core.enums.GroupRole;
 import com.splitEasy.core.enums.GroupType;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.experimental.SuperBuilder;
 
 import java.time.Instant;
 import java.util.Comparator;
@@ -15,8 +17,8 @@ import java.util.List;
 import java.util.UUID;
 
 @Getter
-@Builder
-public class GroupDetailDTO {
+@SuperBuilder
+public class GroupDetailDTO extends VersionedResponse {
     private UUID groupId;
     private String name;
     private String description;
@@ -43,6 +45,7 @@ public class GroupDetailDTO {
                                       UUID currentUserId,
                                       String frontendBaseUrl) {
         return GroupDetailDTO.builder()
+                .version(g.getVersion())
                 .groupId(g.getId())
                 .name(g.getName())
                 .description(g.getDescription())

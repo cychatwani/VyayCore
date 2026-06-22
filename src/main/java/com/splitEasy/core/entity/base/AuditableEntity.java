@@ -1,9 +1,6 @@
 package com.splitEasy.core.entity.base;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.MappedSuperclass;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
@@ -37,6 +34,9 @@ public abstract class AuditableEntity extends BaseEntity {
 
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
+
+    @Version
+    private Long version;
 
     @PrePersist
     protected void onCreate() {
