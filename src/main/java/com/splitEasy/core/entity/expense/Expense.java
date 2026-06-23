@@ -9,6 +9,8 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.SQLRestriction;
+import org.hibernate.annotations.JdbcType;
+import org.hibernate.dialect.PostgreSQLEnumJdbcType;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -27,8 +29,10 @@ public class Expense extends SoftDeletableEntity {
     @Column(nullable = false)
     private String description;
 
-    // Stored in MINOR units of `currency` (e.g. paise for INR). This is MONEY, not an id —
-    // it stays Long. Major value is derived in the response DTO as minor / 10^decimalPlaces.
+    // Stored in MINOR units of `currency` (e.g. paise for INR). This is MONEY, not
+    // an id —
+    // it stays Long. Major value is derived in the response DTO as minor /
+    // 10^decimalPlaces.
     @Column(name = "total_amount_minor", nullable = false)
     private Long totalAmountMinor;
 
@@ -48,7 +52,8 @@ public class Expense extends SoftDeletableEntity {
 
     // Null == not split (personal). Set when split among members.
     @Enumerated(EnumType.STRING)
-    @Column(length = 20)
+    @JdbcType(PostgreSQLEnumJdbcType.class)
+    @Column(name = "split_type", columnDefinition = "split_type")
     private SplitType splitType;
 
     @OneToMany(mappedBy = "expense", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -59,13 +64,15 @@ public class Expense extends SoftDeletableEntity {
     @Builder.Default
     private List<ExpenseShare> shares = new ArrayList<>();
 
-    // When the expense actually occurred — distinct from createdAt (when the row was recorded).
+    // When the expense actually occurred — distinct from createdAt (when the row
+    // was recorded).
     @Column(nullable = false)
     private Instant expenseDate;
 
-    private String notes;  // nullable
+    private String notes; // nullable
 
-    // Keeps its OWN @PrePersist for the expenseDate default. id-gen and timestamps come from
+    // Keeps its OWN @PrePersist for the expenseDate default. id-gen and timestamps
+    // come from
     // the base; JPA fires assignId -> onCreate -> applyDefaults, superclass-first.
     @PrePersist
     private void applyDefaults() {

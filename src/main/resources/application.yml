@@ -19,7 +19,7 @@
         add-mappings: false
 
     datasource:
-      url: jdbc:postgresql://localhost:5432/splitEasy
+      url: jdbc:postgresql://localhost:5432/vyay_core
       username: postgres       # or your DB user
       password: india4597
       driver-class-name: org.postgresql.Driver
@@ -36,16 +36,17 @@
 
     sql:
       init:
-        mode: always
+        mode: never
     jpa:
       hibernate:
-        ddl-auto: update
-      defer-datasource-initialization: true
+        ddl-auto: validate
+      defer-datasource-initialization: false
       show-sql: true
       properties:
         hibernate:
           dialect: org.hibernate.dialect.PostgreSQLDialect
           format_sql: true
+   
 
     data:
       redis:

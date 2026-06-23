@@ -22,6 +22,7 @@ import com.splitEasy.core.security.JwtService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -29,7 +30,8 @@ import java.util.UUID;
 @Service
 public class GroupInviteService {
 
-    private static final long PRIMARY_TOKEN_TTL_MS = 3650L * 24 * 60 * 60 * 1000;
+    private static final Duration PRIMARY_TOKEN_TTL =
+            Duration.ofDays(3650L * 20); // ~200 years
 
     private final GroupRepository groupRepository;
     private final GroupMembershipRepository groupMembershipRepository;
@@ -52,7 +54,6 @@ public class GroupInviteService {
     @Transactional
     public InviteResponseDTO createInvite(User principal, UUID groupId, CreateInviteRequestDTO request) {
         Group group = groupRepository.findById(groupId)
-                .filter(g -> !g.isDeleted())
                 .orElseThrow(GroupNotFoundException::new);
 
         GroupMembership me = groupMembershipRepository
@@ -64,24 +65,17 @@ public class GroupInviteService {
         }
 
         List<UUID> invited = request.getInvitedUserIds();
-        if (invited != null && !invited.isEmpty()) {
-            List<UUID> alreadyMembers = groupMembershipRepository
-                    .findExistingMemberUserIds(groupId, invited, MembershipStatus.ACTIVE);
-            if (!alreadyMembers.isEmpty()) {
-                throw new AlreadyAMemberException(
-                        "Already a member: " + alreadyMembers.stream().map(UUID::toString).reduce((a, b) -> a + ", " + b).orElse(""));
-            }
+        if (invited != null) {
+            invited = invited.stream()
+                    .distinct()
+                    .toList();
         }
 
-        Instant expiresAt;
-        Integer maxUses;
+        Instant expiresAt = request.getExpiresAt();
+        Integer maxUses = request.getMaxUses();
+
         if (request.getType() == InviteLinkType.PRIMARY) {
             groupInviteLinkRepository.deactivateActiveLinksOfType(groupId, InviteLinkType.PRIMARY);
-            expiresAt = null;
-            maxUses = null;
-        } else {
-            expiresAt = request.getExpiresAt();
-            maxUses = request.getMaxUses();
         }
 
         User creatorRef = userRepository.getReferenceById(principal.getId());
@@ -97,7 +91,7 @@ public class GroupInviteService {
 
         long ttl = (expiresAt != null)
                 ? Math.max(0, expiresAt.toEpochMilli() - System.currentTimeMillis())
-                : PRIMARY_TOKEN_TTL_MS;
+                : PRIMARY_TOKEN_TTL.toMillis();
         String token = jwtService.generateGroupInviteToken(link.getCode(), invited, ttl);
 
         return InviteResponseDTO.builder()

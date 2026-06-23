@@ -7,8 +7,10 @@ import com.splitEasy.core.enums.MembershipStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import org.hibernate.annotations.JdbcType;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
+import org.hibernate.dialect.PostgreSQLEnumJdbcType;
 
 import java.time.Instant;
 
@@ -38,11 +40,13 @@ public class GroupMembership extends SoftDeletableEntity {
     private User user;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @JdbcType(PostgreSQLEnumJdbcType.class)
+    @Column(name = "role", columnDefinition = "group_role", nullable = false)
     private GroupRole role;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @JdbcType(PostgreSQLEnumJdbcType.class)
+    @Column(name = "status", columnDefinition = "membership_status", nullable = false)
     @Builder.Default
     private MembershipStatus status = MembershipStatus.ACTIVE;
 

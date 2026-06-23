@@ -9,8 +9,10 @@ import com.splitEasy.core.enums.SettlementStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import org.hibernate.annotations.JdbcType;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
+import org.hibernate.dialect.PostgreSQLEnumJdbcType;
 
 import java.time.Instant;
 
@@ -49,13 +51,15 @@ public class Settlement extends SoftDeletableEntity {
     private Long amountMinor;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @JdbcType(PostgreSQLEnumJdbcType.class)
+    @Column(name = "status", columnDefinition = "settlement_status", nullable = false)
     @Builder.Default
     private SettlementStatus status = SettlementStatus.PROPOSED;
 
     // The channel money moved through. Null until known.
     @Enumerated(EnumType.STRING)
-    @Column(length = 20)
+    @JdbcType(PostgreSQLEnumJdbcType.class)
+    @Column(name = "method", columnDefinition = "settlement_method")
     private SettlementMethod method;
 
     // Did the app initiate/drive the payment (vs a manually recorded settlement)?

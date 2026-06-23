@@ -1,10 +1,7 @@
 package com.splitEasy.core.dto.requests.group;
 
 import com.splitEasy.core.enums.GroupType;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -40,4 +37,9 @@ public class CreateGroupRequestDTO {
             message = "Currency code must be a valid ISO 4217 code format (e.g. USD, INR)"
     )
     private String defaultCurrencyCode;
+
+    @AssertTrue(message = "INDIVIDUAL groups cannot be created directly")
+    public boolean isGroupTypeValid() {
+        return type != GroupType.INDIVIDUAL;
+    }
 }

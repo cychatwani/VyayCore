@@ -8,6 +8,8 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
+import org.hibernate.annotations.JdbcType;
+import org.hibernate.dialect.PostgreSQLEnumJdbcType;
 
 import java.time.Instant;
 
@@ -36,7 +38,8 @@ public class GroupInviteLink extends SoftDeletableEntity {
     private String code;  // short, shareable, unique — service-generated
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @JdbcType(PostgreSQLEnumJdbcType.class)
+    @Column(name = "type", columnDefinition = "invite_link_type", nullable = false)
     private InviteLinkType type;
 
     @ManyToOne(fetch = FetchType.LAZY)

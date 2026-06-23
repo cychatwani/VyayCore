@@ -5,6 +5,8 @@ import com.splitEasy.core.enums.AuthProvider;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import org.hibernate.annotations.JdbcType;
+import org.hibernate.dialect.PostgreSQLEnumJdbcType;
 
 @Entity
 @Table(name = "users")
@@ -30,7 +32,8 @@ public class User extends SoftDeletableEntity {
     private String email;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @JdbcType(PostgreSQLEnumJdbcType.class)
+    @Column(name = "auth_provider", columnDefinition = "auth_provider", nullable = false)
     private AuthProvider authProvider;
 
     @Column(length = 100)

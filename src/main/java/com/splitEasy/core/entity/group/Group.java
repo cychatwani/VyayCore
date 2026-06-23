@@ -7,7 +7,9 @@ import com.splitEasy.core.enums.GroupType;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import org.hibernate.annotations.JdbcType;
 import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.dialect.PostgreSQLEnumJdbcType;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.type.SqlTypes;
@@ -29,14 +31,15 @@ public class Group extends SoftDeletableEntity {
     @Column(nullable = false)
     private String name;
 
-    private String description;  // nullable
+    private String description; // nullable
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "default_currency", nullable = false)
     private Currency defaultCurrency;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @JdbcType(PostgreSQLEnumJdbcType.class)
+    @Column(name = "type", columnDefinition = "group_type", nullable = false)
     private GroupType type;
 
     @ManyToOne(fetch = FetchType.LAZY)

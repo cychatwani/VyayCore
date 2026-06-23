@@ -26,11 +26,14 @@ public class CreateInviteRequestDTO {
     private Instant expiresAt;
     private Integer maxUses;
 
-    @AssertTrue(message = "PRIMARY invites cannot set expiresAt or maxUses")
-    public boolean isLimitsValidForType() {
+    @AssertTrue(message = "PRIMARY invites cannot set invited users, expiresAt or maxUses")
+    public boolean isValidForType() {
         if (type != InviteLinkType.PRIMARY) {
             return true;
         }
-        return expiresAt == null && maxUses == null;
+
+        return (invitedUserIds == null || invitedUserIds.isEmpty())
+                && expiresAt == null
+                && maxUses == null;
     }
 }

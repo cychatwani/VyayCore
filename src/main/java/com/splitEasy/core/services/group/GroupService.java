@@ -57,9 +57,6 @@ public class GroupService {
 
     @Transactional
     public Group createGroup(User principal, CreateGroupRequestDTO request) {
-        if (request.getType() == GroupType.INDIVIDUAL) {
-            throw new InvalidGroupTypeException();
-        }
 
         Currency currency = currencyRepository.findByCode(request.getDefaultCurrencyCode())
                 .orElseThrow(() -> new InvalidCurrencyException(request.getDefaultCurrencyCode()));
