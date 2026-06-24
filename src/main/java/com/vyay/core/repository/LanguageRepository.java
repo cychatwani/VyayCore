@@ -1,0 +1,1 @@
+package com.vyay.core.repository;import com.vyay.core.entity.reference.Language;import org.springframework.data.jpa.repository.JpaRepository;import java.util.Optional;import java.util.UUID;public interface LanguageRepository extends JpaRepository<Language, UUID> {    Optional<Language> findByCode(String code);}

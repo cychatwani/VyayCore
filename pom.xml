@@ -10,11 +10,11 @@
         <relativePath/>
     </parent>
 
-    <groupId>com.splitEasy</groupId>
+    <groupId>com.vyay</groupId>
     <artifactId>core</artifactId>
     <version>0.0.1</version>
     <name>core</name>
-    <description>Core service of the splitEasy app</description>
+    <description>Core service of the vyay app</description>
 
     <properties>
         <java.version>17</java.version>

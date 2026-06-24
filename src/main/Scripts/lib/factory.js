@@ -7,7 +7,7 @@ let seq = 0;
 
 async function makeUser() {
   seq += 1;
-  const email = `t-${RUN}-${seq}@spliteasy.test`;
+  const email = `t-${RUN}-${seq}@vyay.test`;
   const password = 'TestPass@12345';
 
   const reg = await api.post('/auth/register', {

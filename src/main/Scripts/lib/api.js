@@ -1,4 +1,4 @@
-// lib/api.js - thin HTTP client for the SplitEasy API.
+// lib/api.js - thin HTTP client for the vyay API.
 // Override the base with:  BASE=http://host:port/api node --test ...
 
 const BASE = process.env.BASE || 'http://localhost:8080/api';

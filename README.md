@@ -1,4 +1,4 @@
-# SplitEasy
+# vyay
 
 > A Splitwise-style expense-splitting REST API, built with Spring Boot.
 
@@ -7,7 +7,7 @@
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-blue)
 ![Redis](https://img.shields.io/badge/Redis-red)
 
-SplitEasy is the backend for a shared-expenses app: people form groups, invite each other via links, split costs, and settle up. This repository is the API — a stateless, JWT-secured Spring Boot service backed by PostgreSQL and Redis. It is built as a portfolio project, with an emphasis on correct domain modelling, concurrency-safe operations, and clean layering.
+vyay is the backend for a shared-expenses app: people form groups, invite each other via links, split costs, and settle up. This repository is the API — a stateless, JWT-secured Spring Boot service backed by PostgreSQL and Redis. It is built as a portfolio project, with an emphasis on correct domain modelling, concurrency-safe operations, and clean layering.
 
 ---
 
@@ -82,7 +82,7 @@ The *why* behind the parts that aren't obvious:
 ### Prerequisites
 
 - JDK 17
-- PostgreSQL (a database named `splitEasy`)
+- PostgreSQL (a database named `vyay`)
 - Redis
 - Maven is bundled via the wrapper (`./mvnw`), so no separate install needed
 
@@ -164,7 +164,7 @@ node --test src/main/Scripts/tests/
 
 ```
 src/main/
-├── java/com/splitEasy/core/
+├── java/com/vyay/core/
 │   ├── common/utils/      # avatars, email, invite-code generation
 │   ├── config/            # cache, password, datasource config
 │   ├── controllers/       # REST endpoints
