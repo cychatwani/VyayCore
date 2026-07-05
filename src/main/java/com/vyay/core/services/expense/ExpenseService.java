@@ -10,6 +10,8 @@ import com.vyay.core.dto.response.expense.ExpenseResponseDTO;
 import com.vyay.core.entity.User;
 import com.vyay.core.entity.balance.BalanceLedgerEntry;
 import com.vyay.core.entity.expense.Expense;
+import com.vyay.core.entity.expense.ExpensePayer;
+import com.vyay.core.entity.expense.ExpenseShare;
 import com.vyay.core.entity.group.Group;
 import com.vyay.core.entity.reference.Currency;
 import com.vyay.core.enums.LedgerSourceType;
@@ -20,7 +22,7 @@ import com.vyay.core.exception.business.InvalidCurrencyException;
 import com.vyay.core.exception.business.InvalidExpenseException;
 import com.vyay.core.exception.business.NotAMemberException;
 import com.vyay.core.repository.*;
-import com.vyay.core.repository.*;
+import com.vyay.core.services.balance.BalanceUpdateService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,6 +34,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 public class ExpenseService {
@@ -46,6 +50,7 @@ public class ExpenseService {
     private final BalanceRepository balanceRepository;
     private final BalanceLedgerRepository ledgerRepository;
     private final HmacSigner hmacSigner;
+    private final BalanceUpdateService balanceUpdateService;
 
     public ExpenseService(ExpenseRepository expenseRepository,
                           CurrencyRepository currencyRepository,
@@ -56,8 +61,10 @@ public class ExpenseService {
                           ExpenseLineFactory lineFactory,
                           BalanceRepository balanceRepository,
                           BalanceLedgerRepository ledgerRepository,
-                          HmacSigner hmacSigner) {
+                          HmacSigner hmacSigner,
+                          BalanceUpdateService balanceUpdateService ) {
         this.expenseRepository = expenseRepository;
+        this.balanceUpdateService = balanceUpdateService;
         this.currencyRepository = currencyRepository;
         this.groupRepository = groupRepository;
         this.groupMembershipRepository = groupMembershipRepository;
@@ -102,14 +109,31 @@ public class ExpenseService {
             expense.getPayers().add(lineFactory.payer(expense, principal, total));
             expense.getShares().add(lineFactory.share(expense, principal, total, null, null));
         } else {
-            buildPayers(expense, group, request.getPayers(), total, currency);
-            buildShares(expense, group, request.getSplitType(), request.getParticipants(), total, currency);
+            if (request.getPayers() == null || request.getPayers().isEmpty()) {
+                throw new InvalidExpenseException("A group expense needs at least one payer");
+            }
+            if (request.getParticipants() == null || request.getParticipants().isEmpty()) {
+                throw new InvalidExpenseException("A split needs at least one participant");
+            }
+
+            Set<UUID> involvedUserIds = Stream.concat(
+                    request.getPayers().stream().map(ExpensePayerInputDTO::getUserId),
+                    request.getParticipants().stream().map(ExpenseShareInputDTO::getUserId)
+            ).collect(Collectors.toUnmodifiableSet());
+
+            List<UUID> existingMemberUserIds = groupMembershipRepository.findExistingMemberUserIds(group.getId(), involvedUserIds, MembershipStatus.ACTIVE);
+            if (existingMemberUserIds.size() != involvedUserIds.size()) {
+                throw new InvalidExpenseException("Some participants are not active members of the group");
+            }
+
+            buildPayers(expense, request.getPayers(), total, currency);
+            buildShares(expense, request.getSplitType(), request.getParticipants(), total, currency);
         }
 
         Expense saved = expenseRepository.save(expense);
 
         if (saved.getGroup() != null) {
-            applyBalanceDeltas(saved);
+            balanceUpdateService.applyDeltas(saved);
         }
 
         return ExpenseResponseDTO.from(saved);
@@ -144,56 +168,97 @@ public class ExpenseService {
         });
     }
 
-    private void buildPayers(Expense expense, Group group, List<ExpensePayerInputDTO> inputs,
-                             long total, Currency currency) {
+    private void buildPayers(Expense expense,
+                             List<ExpensePayerInputDTO> inputs,
+                             long total,
+                             Currency currency) {
+
         if (inputs == null || inputs.isEmpty()) {
             throw new InvalidExpenseException("A group expense needs at least one payer");
         }
+
         Set<UUID> seen = new HashSet<>();
         long sum = 0;
+
         for (ExpensePayerInputDTO in : inputs) {
+
             if (!seen.add(in.getUserId())) {
                 throw new InvalidExpenseException("Duplicate payer: " + in.getUserId());
             }
+
             long paid = MoneyUtils.toMinor(in.getAmountPaid(), currency);
             if (paid <= 0) {
                 throw new InvalidExpenseException("Each payer must have a positive amount");
             }
-            expense.getPayers().add(lineFactory.payer(expense, resolveMember(group, in.getUserId()), paid));
+
+            expense.getPayers().add(
+                    ExpensePayer.builder()
+                            .expense(expense)
+                            .user(userRepository.getReferenceById(in.getUserId()))
+                            .amountPaidMinor(paid)
+                            .build()
+            );
+
             sum += paid;
         }
+
         if (sum != total) {
-            throw new InvalidExpenseException("Payer amounts (" + sum + ") must sum to the total (" + total + ")");
+            throw new InvalidExpenseException(
+                    "Payer amounts (" + sum + ") must sum to the total (" + total + ")"
+            );
         }
     }
 
-    private void buildShares(Expense expense, Group group, SplitType type,
-                             List<ExpenseShareInputDTO> inputs, long total, Currency currency) {
+    private void buildShares(Expense expense,
+                             SplitType type,
+                             List<ExpenseShareInputDTO> inputs,
+                             long total,
+                             Currency currency) {
         if (inputs == null || inputs.isEmpty()) {
             throw new InvalidExpenseException("A split needs at least one participant");
         }
         Set<UUID> seen = new HashSet<>();
-        List<User> users = new ArrayList<>(inputs.size());
         for (ExpenseShareInputDTO in : inputs) {
             if (!seen.add(in.getUserId())) {
                 throw new InvalidExpenseException("Duplicate participant: " + in.getUserId());
             }
-            users.add(resolveMember(group, in.getUserId()));
         }
 
         long[] owed = switch (type) {
             case EQUAL -> splitCalculator.equally(total, inputs.size());
-            case EXACT -> splitCalculator.exact(total, exactMinors(inputs, currency));
-            case PERCENTAGE -> splitCalculator.byPercentage(total,
-                    inputs.stream().map(ExpenseShareInputDTO::getPercentage).toList());
-            case SHARES -> splitCalculator.byWeight(total,
-                    inputs.stream().map(ExpenseShareInputDTO::getShareWeight).toList());
+            case EXACT -> splitCalculator.exact(
+                    total,
+                    exactMinors(inputs, currency)
+            );
+            case PERCENTAGE -> splitCalculator.byPercentage(
+                    total,
+                    inputs.stream()
+                            .map(ExpenseShareInputDTO::getPercentage)
+                            .toList()
+            );
+            case SHARES -> splitCalculator.byWeight(
+                    total,
+                    inputs.stream()
+                            .map(ExpenseShareInputDTO::getShareWeight)
+                            .toList()
+            );
         };
 
         for (int i = 0; i < inputs.size(); i++) {
-            BigDecimal pct = (type == SplitType.PERCENTAGE) ? inputs.get(i).getPercentage() : null;
-            Integer weight = (type == SplitType.SHARES) ? inputs.get(i).getShareWeight() : null;
-            expense.getShares().add(lineFactory.share(expense, users.get(i), owed[i], pct, weight));
+            ExpenseShareInputDTO input = inputs.get(i);
+            BigDecimal percentage =
+                    type == SplitType.PERCENTAGE ? input.getPercentage() : null;
+            Integer shareWeight =
+                    type == SplitType.SHARES ? input.getShareWeight() : null;
+            expense.getShares().add(
+                    ExpenseShare.builder()
+                            .expense(expense)
+                            .user(userRepository.getReferenceById(input.getUserId()))
+                            .owedAmountMinor(owed[i])
+                            .percentage(percentage)
+                            .shareWeight(shareWeight)
+                            .build()
+            );
         }
     }
 
@@ -217,18 +282,11 @@ public class ExpenseService {
     }
 
     private void requireActiveMember(UUID groupId, UUID userId) {
-        groupMembershipRepository
-                .findByGroupIdAndUserIdAndStatus(groupId, userId, MembershipStatus.ACTIVE)
-                .orElseThrow(NotAMemberException::new);
-    }
-
-    private User resolveMember(Group group, UUID userId) {
-        User u = userRepository.findById(userId)
-                .orElseThrow(() -> new InvalidExpenseException("Unknown user: " + userId));
-        groupMembershipRepository
-                .findByGroupIdAndUserIdAndStatus(group.getId(), u.getId(), MembershipStatus.ACTIVE)
-                .orElseThrow(() -> new InvalidExpenseException(
-                        "User " + userId + " is not an active member of the group"));
-        return u;
+        if (!groupMembershipRepository.existsByGroupIdAndUserIdAndStatus(
+                groupId,
+                userId,
+                MembershipStatus.ACTIVE)) {
+            throw new NotAMemberException();
+        }
     }
 }
