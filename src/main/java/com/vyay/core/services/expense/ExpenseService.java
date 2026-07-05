@@ -109,6 +109,12 @@ public class ExpenseService {
             expense.getPayers().add(lineFactory.payer(expense, principal, total));
             expense.getShares().add(lineFactory.share(expense, principal, total, null, null));
         } else {
+            if (request.getPayers() == null || request.getPayers().isEmpty()) {
+                throw new InvalidExpenseException("A group expense needs at least one payer");
+            }
+            if (request.getParticipants() == null || request.getParticipants().isEmpty()) {
+                throw new InvalidExpenseException("A split needs at least one participant");
+            }
 
             Set<UUID> involvedUserIds = Stream.concat(
                     request.getPayers().stream().map(ExpensePayerInputDTO::getUserId),
