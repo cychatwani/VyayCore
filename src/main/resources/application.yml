@@ -19,9 +19,9 @@
         add-mappings: false
 
     datasource:
-      url: jdbc:postgresql://localhost:5432/vyay_core
+      url: jdbc:postgresql://localhost:5434/vyay_core
       username: postgres       # or your DB user
-      password: india4597
+      password: India4597
       driver-class-name: org.postgresql.Driver
 
     hikari:

@@ -93,10 +93,18 @@ public class GroupService {
         return saved;
     }
 
+    /**
+     * Branches on whether a type filter was supplied. See
+     * GroupMembershipRepository#findGroupsByUserIdAndStatusAndType for why this is
+     * two repository methods rather than one query with an inline null-check.
+     */
     @Transactional(readOnly = true)
     public Page<Group> listMyGroups(User principal, GroupType type, Pageable pageable) {
-        return groupMembershipRepository.findGroupsByUserIdAndStatus(
-                principal.getId(), MembershipStatus.ACTIVE, type, pageable);
+        return type == null
+                ? groupMembershipRepository.findGroupsByUserIdAndStatus(
+                        principal.getId(), MembershipStatus.ACTIVE, pageable)
+                : groupMembershipRepository.findGroupsByUserIdAndStatusAndType(
+                        principal.getId(), MembershipStatus.ACTIVE, type, pageable);
     }
 
     @Transactional(readOnly = true)
