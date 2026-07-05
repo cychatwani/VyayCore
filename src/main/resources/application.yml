@@ -46,17 +46,13 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
-
-        # JDBC batching
         jdbc:
           batch_size: 100
 
         order_inserts: true
         order_updates: true
 
-        # Temporary - verify batching is actually happening
-        generate_statistics: true
-
+        
   data:
     redis:
       host: localhost
