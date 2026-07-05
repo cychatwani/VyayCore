@@ -1,75 +1,87 @@
-  spring:
-    jwt:
-      secret: "iHtgBkvWNrh1G7k7dJWCurBxl8QU26kx"
-      access-token-expiration: 300000    # 5 minutes in milliseconds
-      refresh-token-expiration: 2592000000 # 30 days in milliseconds
-      email-verification-expiration: 1800000 # 30 minutes
+spring:
+  jwt:
+    secret: "iHtgBkvWNrh1G7k7dJWCurBxl8QU26kx"
+    access-token-expiration: 300000 # 5 minutes in milliseconds
+    refresh-token-expiration: 2592000000 # 30 days in milliseconds
+    email-verification-expiration: 1800000 # 30 minutes
 
+  application:
+    name: core
 
-    application:
-      name: core
+  mvc:
+    servlet:
+      path: /api
+    throw-exception-if-no-handler-found: true
 
-    mvc:
-      servlet:
-        path: /api
-      throw-exception-if-no-handler-found: true
+  web:
+    resources:
+      add-mappings: false
 
-    web:
-      resources:
-        add-mappings: false
+  datasource:
+    url: jdbc:postgresql://localhost:5434/vyay_core
+    username: postgres # or your DB user
+    password: India4597
+    driver-class-name: org.postgresql.Driver
 
-    datasource:
-      url: jdbc:postgresql://localhost:5434/vyay_core
-      username: postgres       # or your DB user
-      password: India4597
-      driver-class-name: org.postgresql.Driver
+  hikari:
+    maximum-pool-size: 10
+    minimum-idle: 2
+    auto-commit: true
+    pool-name: HikariPool-1
+    transaction-isolation: TRANSACTION_READ_COMMITTED
+    idle-timeout: 30000 # 30s
+    connection-timeout: 20000 # 20s
+    max-lifetime: 1800000 # 30 min
 
-    hikari:
-      maximum-pool-size: 10
-      minimum-idle: 2
-      auto-commit: true
-      pool-name: HikariPool-1
-      transaction-isolation: TRANSACTION_READ_COMMITTED
-      idle-timeout: 30000       # 30s
-      connection-timeout: 20000 # 20s
-      max-lifetime: 1800000     # 30 min
+  sql:
+    init:
+      mode: never
 
-    sql:
-      init:
-        mode: never
-    jpa:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    defer-datasource-initialization: false
+    show-sql: true
+    properties:
       hibernate:
-        ddl-auto: validate
-      defer-datasource-initialization: false
-      show-sql: true
-      properties:
-        hibernate:
-          dialect: org.hibernate.dialect.PostgreSQLDialect
-          format_sql: true
-   
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
 
-    data:
-      redis:
-        host: localhost
-        port: 6379
+        # JDBC batching
+        jdbc:
+          batch_size: 100
 
-    avatar:
-      base-url: https://ui-avatars.com/api/
+        order_inserts: true
+        order_updates: true
 
-    cache:
-      type: redis
-      default-ttl: 300000        # 5 minutes in ms
-      currency-ttl: 86400000     # 24 hours in ms
+        # Temporary - verify batching is actually happening
+        generate_statistics: true
 
-  google:
-    oauth:
-      client-id: 79365214496-c026mqlrgipsho5cek4sbkve2i3e93no.apps.googleusercontent.com
+  data:
+    redis:
+      host: localhost
+      port: 6379
 
-  kind: Application
-  app:
-    auth:
-      skip-email-verification: true   # DEV ONLY — code defaults to false, so prod stays safe
-    ledger:
-      hmac-secret: ${LEDGER_HMAC_SECRET:dev-only-change-me-before-anything-real}
-    frontend:
-      base-url: ${APP_FRONTEND_BASE_URL:theVyayApp.com}
+  avatar:
+    base-url: https://ui-avatars.com/api/
+
+  cache:
+    type: redis
+    default-ttl: 300000 # 5 minutes in ms
+    currency-ttl: 86400000 # 24 hours in ms
+
+google:
+  oauth:
+    client-id: 79365214496-c026mqlrgipsho5cek4sbkve2i3e93no.apps.googleusercontent.com
+
+kind: Application
+
+app:
+  auth:
+    skip-email-verification: true # DEV ONLY — code defaults to false, so prod stays safe
+
+  ledger:
+    hmac-secret: ${LEDGER_HMAC_SECRET:dev-only-change-me-before-anything-real}
+
+  frontend:
+    base-url: ${APP_FRONTEND_BASE_URL:theVyayApp.com}
