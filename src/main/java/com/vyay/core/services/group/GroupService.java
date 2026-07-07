@@ -4,6 +4,7 @@ import com.vyay.core.common.utils.InviteCodeGenerator;
 import com.vyay.core.dto.requests.group.CreateGroupRequestDTO;
 import com.vyay.core.dto.response.group.GroupDetailDTO;
 import com.vyay.core.entity.User;
+import com.vyay.core.entity.balance.Balance;
 import com.vyay.core.entity.group.Group;
 import com.vyay.core.entity.group.GroupInviteLink;
 import com.vyay.core.entity.group.GroupMembership;
@@ -16,6 +17,7 @@ import com.vyay.core.enums.MembershipStatus;
 import com.vyay.core.exception.business.GroupNotFoundException;
 import com.vyay.core.exception.business.InvalidCurrencyException;
 import com.vyay.core.exception.business.NotAMemberException;
+import com.vyay.core.repository.BalanceRepository;
 import com.vyay.core.repository.CurrencyRepository;
 import com.vyay.core.repository.GroupInviteLinkRepository;
 import com.vyay.core.repository.GroupMembershipRepository;
@@ -38,6 +40,7 @@ public class GroupService {
     private final GroupInviteLinkRepository groupInviteLinkRepository;
     private final CurrencyRepository currencyRepository;
     private final UserRepository userRepository;
+    private final BalanceRepository balanceRepository;
     private final String frontendBaseUrl;
 
     public GroupService(GroupRepository groupRepository,
@@ -45,12 +48,14 @@ public class GroupService {
                         GroupInviteLinkRepository groupInviteLinkRepository,
                         CurrencyRepository currencyRepository,
                         UserRepository userRepository,
+                        BalanceRepository balanceRepository,
                         @Value("${app.frontend.base-url}") String frontendBaseUrl) {
         this.groupRepository = groupRepository;
         this.groupMembershipRepository = groupMembershipRepository;
         this.groupInviteLinkRepository = groupInviteLinkRepository;
         this.currencyRepository = currencyRepository;
         this.userRepository = userRepository;
+        this.balanceRepository = balanceRepository;
         this.frontendBaseUrl = frontendBaseUrl;
     }
 
@@ -121,7 +126,9 @@ public class GroupService {
                 groupMembershipRepository.findMembersByGroupIdAndStatus(groupId, MembershipStatus.ACTIVE);
         List<GroupInviteLink> invites =
                 groupInviteLinkRepository.findByGroupIdAndIsActiveTrue(groupId);
+        List<Balance> balances =
+                balanceRepository.findByGroupIdWithCurrency(groupId);
 
-        return GroupDetailDTO.from(group, me.getRole(), members, invites, principal.getId(), frontendBaseUrl);
+        return GroupDetailDTO.from(group, me.getRole(), members, invites, balances, principal.getId(), frontendBaseUrl);
     }
 }
