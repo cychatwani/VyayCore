@@ -8,6 +8,7 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 @Getter
@@ -18,24 +19,18 @@ public class MemberDTO {
     private String profilePicture;
     private GroupRole role;
     private Instant activeSince;
+    private List<CurrencyBalanceDTO> balances;
 
     @Getter(onMethod_ = @JsonProperty("isCurrentUser"))
     private boolean isCurrentUser;
 
     /**
-     * Context-free mapping. isCurrentUser defaults to false — only safe when the
-     * caller has no "viewer" notion (e.g. webhook payloads, admin tools).
-     * For requests on behalf of a user, use {@link #from(GroupMembership, UUID)}.
+     * Viewer-aware mapping. Balances are supplied by the caller (they require a
+     * cross-member currency set the single membership doesn't carry) and are
+     * zero-filled across every currency the group touches.
      */
-    public static MemberDTO from(GroupMembership m) {
-        return from(m, null);
-    }
-
-    /**
-     * Viewer-aware mapping: marks isCurrentUser=true when the membership's user
-     * matches the supplied viewer id.
-     */
-    public static MemberDTO from(GroupMembership m, UUID currentUserId) {
+    public static MemberDTO from(GroupMembership m, UUID currentUserId,
+                                 List<CurrencyBalanceDTO> balances) {
         User u = m.getUser();
         return MemberDTO.builder()
                 .userId(u.getId())
@@ -43,6 +38,7 @@ public class MemberDTO {
                 .profilePicture(u.getProfilePicture())
                 .role(m.getRole())
                 .activeSince(m.getActiveSince())
+                .balances(balances)
                 .isCurrentUser(currentUserId != null && currentUserId.equals(u.getId()))
                 .build();
     }

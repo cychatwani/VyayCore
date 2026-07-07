@@ -14,7 +14,6 @@ import com.vyay.core.entity.expense.ExpensePayer;
 import com.vyay.core.entity.expense.ExpenseShare;
 import com.vyay.core.entity.group.Group;
 import com.vyay.core.entity.reference.Currency;
-import com.vyay.core.enums.LedgerSourceType;
 import com.vyay.core.enums.MembershipStatus;
 import com.vyay.core.enums.SplitType;
 import com.vyay.core.exception.business.GroupNotFoundException;
@@ -23,6 +22,7 @@ import com.vyay.core.exception.business.InvalidExpenseException;
 import com.vyay.core.exception.business.NotAMemberException;
 import com.vyay.core.repository.*;
 import com.vyay.core.services.balance.BalanceUpdateService;
+import com.vyay.core.services.balance.commands.BalanceUpdateCommand;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -133,39 +133,10 @@ public class ExpenseService {
         Expense saved = expenseRepository.save(expense);
 
         if (saved.getGroup() != null) {
-            balanceUpdateService.applyDeltas(saved);
+            balanceUpdateService.applyDeltas(BalanceUpdateCommand.from(saved));
         }
 
         return ExpenseResponseDTO.from(saved);
-    }
-
-    private void applyBalanceDeltas(Expense expense) {
-        UUID groupId = expense.getGroup().getId();
-        String currencyCode = expense.getCurrency().getCode();
-
-        Map<UUID, Long> netByUser = new HashMap<>();
-        for (var p : expense.getPayers()) {
-            netByUser.merge(p.getUser().getId(), p.getAmountPaidMinor(), Long::sum);
-        }
-        for (var s : expense.getShares()) {
-            netByUser.merge(s.getUser().getId(), -s.getOwedAmountMinor(), Long::sum);
-        }
-
-        netByUser.forEach((userId, delta) -> {
-            if (delta == 0) {
-                return;
-            }
-            balanceRepository.applyDelta(UuidCreator.getTimeOrderedEpoch(), groupId, userId, expense.getCurrency().getId(), delta);
-
-            BalanceLedgerEntry entry = hmacSigner.signedEntry(
-                    expense.getGroup(),
-                    userRepository.getReferenceById(userId),
-                    expense.getCurrency(),
-                    delta,
-                    LedgerSourceType.EXPENSE,
-                    expense.getId());
-            ledgerRepository.save(entry);
-        });
     }
 
     private void buildPayers(Expense expense,

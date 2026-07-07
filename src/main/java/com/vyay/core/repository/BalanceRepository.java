@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -49,4 +50,12 @@ public interface BalanceRepository extends JpaRepository<Balance, UUID> {
     void applyDeltasBatch(@Param("ids") UUID[] ids, @Param("groupIds") UUID[] groupIds, @Param("userIds") UUID[] userIds, @Param("currencyIds") UUID[] currencyIds, @Param("deltas") Long[] deltas);
 
     Optional<Balance> findByGroupIdAndUserIdAndCurrencyId(UUID groupId, UUID userId, UUID currencyId);
+
+    /**
+     * All balance rows for a group, currency eagerly fetched for DTO mapping.
+     * user stays lazy — only user.getId() is read downstream, which resolves off
+     * the FK without initializing the proxy.
+     */
+    @Query("SELECT b FROM Balance b JOIN FETCH b.currency WHERE b.group.id = :groupId")
+    List<Balance> findByGroupIdWithCurrency(@Param("groupId") UUID groupId);
 }

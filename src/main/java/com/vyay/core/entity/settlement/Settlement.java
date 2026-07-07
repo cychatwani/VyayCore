@@ -69,7 +69,6 @@ public class Settlement extends SoftDeletableEntity {
 
     private String note;  // nullable memo
 
-    // Set when status -> CONFIRMED (the moment balance deltas are applied).
     // Domain timestamp, NOT an audit field — kept here, not in the base.
     private Instant confirmedAt;  // nullable
 }
