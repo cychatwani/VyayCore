@@ -62,10 +62,11 @@ public class Settlement extends SoftDeletableEntity {
     @Column(name = "method", columnDefinition = "settlement_method")
     private SettlementMethod method;
 
-    // Did the app initiate/drive the payment (vs a manually recorded settlement)?
-    @Column(name = "app_initiated", nullable = false)
+    // Indicates whether the payment was initiated from within the app
+// (e.g. via a UPI deep link) rather than being manually recorded.
+    @Column(name = "initiated_via_app", nullable = false)
     @Builder.Default
-    private boolean appInitiated = false;
+    private boolean initiatedViaApp = false ;
 
     private String note;  // nullable memo
 

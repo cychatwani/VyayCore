@@ -22,7 +22,7 @@ import com.vyay.core.exception.business.InvalidExpenseException;
 import com.vyay.core.exception.business.NotAMemberException;
 import com.vyay.core.repository.*;
 import com.vyay.core.services.balance.BalanceUpdateService;
-import com.vyay.core.services.balance.commands.BalanceUpdateCommand;
+import com.vyay.core.services.balance.commands.BalanceUpdateCommandFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -133,7 +133,7 @@ public class ExpenseService {
         Expense saved = expenseRepository.save(expense);
 
         if (saved.getGroup() != null) {
-            balanceUpdateService.applyDeltas(BalanceUpdateCommand.from(saved));
+            balanceUpdateService.applyDeltas(BalanceUpdateCommandFactory.from(saved));
         }
 
         return ExpenseResponseDTO.from(saved);

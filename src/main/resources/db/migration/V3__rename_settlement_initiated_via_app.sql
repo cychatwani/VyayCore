@@ -1,0 +1,12 @@
+-- Rename the settlement flag column app_initiated -> initiated_via_app.
+--
+-- The column already exists (created in V1) and V1 has been applied, so it is
+-- checksum-locked and cannot be edited in place. With ddl-auto: validate, the
+-- entity's new @Column(name = "initiated_via_app") mapping must match the live
+-- column exactly, so the rename has to happen here rather than in V1.
+--
+-- Semantics unchanged: the flag records that the payment flow was *initiated
+-- from within the app* (e.g. a UPI deep link), not that the app executed or
+-- confirmed the payment. The rename only sharpens the name; type and NOT NULL
+-- are preserved by RENAME COLUMN.
+ALTER TABLE settlements RENAME COLUMN app_initiated TO initiated_via_app;
