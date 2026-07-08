@@ -18,7 +18,9 @@ public record GroupPreference(
                 new GroupPreference("autoIncludeAllMembers", "Auto-include all members in new expenses",
                         true, "BOOLEAN", List.of("ADMIN")),
                 new GroupPreference("autoSettle", "Auto-confirm settlements",
-                        false, "BOOLEAN", List.of("ADMIN"))
+                        false, "BOOLEAN", List.of("ADMIN")),
+                new GroupPreference("thirdPartySettlementPolicy", "Who can record settlements for others",
+                        "DISABLED", "ENUM", List.of("ADMIN"))
         );
     }
 }
