@@ -74,7 +74,12 @@ kind: Application
 
 app:
   auth:
-    skip-email-verification: true # DEV ONLY — code defaults to false, so prod stays safe
+    skip-email-verification: false   # DEV ONLY
+    otp:
+      length: 6
+      ttl: 10m
+      max-attempts: 5
+      resend-cooldown: 60s
 
   ledger:
     hmac-secret: ${LEDGER_HMAC_SECRET:dev-only-change-me-before-anything-real}

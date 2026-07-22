@@ -1,10 +1,11 @@
 package com.vyay.core.controllers;
 
+import com.vyay.core.dto.requests.auth.GoogleAuthRequestDTO;
 import com.vyay.core.dto.requests.auth.PasswordAuthRequestDTO;
 import com.vyay.core.dto.requests.auth.PasswordRegisterRequestDTO;
 import com.vyay.core.dto.requests.auth.RefreshTokenAuthRequestDto;
-import com.vyay.core.dto.requests.auth.GoogleAuthRequestDTO;
 import com.vyay.core.dto.response.Auth.AuthResponseDTO;
+import com.vyay.core.dto.response.Auth.RegisterResponseDTO;
 import com.vyay.core.dto.wrapper.ApiResponse;
 import com.vyay.core.services.auth.EmailVerificationService;
 import com.vyay.core.services.auth.GoogleAuthenticationService;
@@ -14,7 +15,12 @@ import com.vyay.core.services.auth.RefreshAuthenticationService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/auth")
@@ -39,12 +45,12 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<ApiResponse<Void>> register(
+    public ResponseEntity<ApiResponse<RegisterResponseDTO>> register(
             @Valid @RequestBody PasswordRegisterRequestDTO requestBody) {
-        passwordRegistrationService.register(requestBody);
+        RegisterResponseDTO payload = passwordRegistrationService.register(requestBody);
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(ApiResponse.success(null, "Registration successful. Please verify your email."));
+                .body(ApiResponse.success(payload));
     }
 
     @PostMapping("/login")
