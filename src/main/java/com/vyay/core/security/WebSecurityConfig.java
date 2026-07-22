@@ -24,6 +24,7 @@ public class WebSecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/verification/auth/**").permitAll()
                         .requestMatchers("/currencies").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/v3/api-docs.yaml").permitAll()   // <-- add
                         .anyRequest().authenticated()
@@ -36,4 +37,3 @@ public class WebSecurityConfig {
         return http.build();
     }
 }
-

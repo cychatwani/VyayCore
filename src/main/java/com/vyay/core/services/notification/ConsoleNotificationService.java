@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.util.Collection;
 import java.util.Map;
 
 @Service
@@ -34,5 +35,12 @@ public class ConsoleNotificationService implements NotificationService {
         log.info("Subject: {}", subject);
         log.info("Body: {}", body);
         log.info("====================================");
+    }
+
+    @Override
+    public void send(Collection<NotificationCommand> commands) {
+        for (NotificationCommand command : commands) {
+            send(command.getType(), command.getChannel(), command.getRecipient(), command.getVariables());
+        }
     }
 }

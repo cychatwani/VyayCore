@@ -4,13 +4,9 @@ import com.vyay.core.entity.base.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import org.hibernate.annotations.SQLDelete;
-import org.hibernate.annotations.SQLRestriction;
 
 @Entity
 @Table(name = "notification_templates")
-@SQLDelete(sql = "update notification_templates set deleted_at = now() where id = ?")
-@SQLRestriction("deleted_at is null")
 @Getter
 @Setter
 @NoArgsConstructor
