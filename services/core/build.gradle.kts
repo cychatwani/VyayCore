@@ -46,8 +46,6 @@ dependencies {
 
     // --- ID generators ---
     implementation(libs.uuid.creator)
-    // Not present in the version catalog; pinned inline to match pom.xml (5.2.3).
-    implementation("com.github.f4b6a3:ulid-creator:5.2.3")
 
     // --- Lombok (pom: <scope>provided</scope>) ---
     // compileOnly + annotationProcessor is the idiomatic Gradle equivalent of
@@ -82,6 +80,3 @@ checkstyle {
     )
 }
 
-tasks.withType<Test> {
-    useJUnitPlatform()
-}
